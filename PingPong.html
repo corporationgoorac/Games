@@ -9,23 +9,16 @@
         :root { --neon: #ccff00; --bg: #050505; }
         * { touch-action: none; box-sizing: border-box; -webkit-user-select: none; }
         body { background: var(--bg); color: #fff; margin: 0; overflow: hidden; height: 100vh; font-family: 'Arial Black', sans-serif; display: flex; flex-direction: column; }
-
-        /* HEADER UI */
         #hud { padding: 30px; display: flex; justify-content: space-between; background: linear-gradient(180deg, rgba(204,255,0,0.1) 0%, transparent 100%); }
         .p-info { display: flex; flex-direction: column; }
         .name-lbl { font-size: 14px; color: var(--neon); letter-spacing: 3px; opacity: 0.8; }
         .score-val { font-size: 80px; font-weight: 900; line-height: 0.8; text-shadow: 0 0 20px var(--neon); }
-
-        /* ARENA */
         #court-wrap { position: relative; flex: 1; margin: 10px 20px 30px; border-left: 6px solid #222; border-right: 6px solid #222; border-radius: 10px; background: #080808; overflow: hidden; }
         canvas { width: 100%; height: 100%; display: block; }
-
-        /* OVERLAYS */
         .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.98); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 20px; backdrop-filter: blur(10px); }
         .modal { width: 100%; max-width: 400px; text-align: center; }
         input { width: 100%; padding: 20px; background: #111; border: 2px solid var(--neon); color: #fff; border-radius: 15px; font-size: 20px; margin-bottom: 20px; text-align: center; }
         .btn { width: 100%; padding: 20px; background: var(--neon); color: #000; border: none; border-radius: 15px; font-weight: 900; font-size: 18px; cursor: pointer; text-transform: uppercase; box-shadow: 0 0 20px rgba(204,255,0,0.4); }
-        
         #announcer { position: absolute; top: 50%; width: 100%; text-align: center; font-size: 40px; color: #fff; font-weight: 900; pointer-events: none; opacity: 0; transition: 0.3s; z-index: 5; }
         #announcer.show { opacity: 1; transform: scale(1.2); }
     </style>
@@ -80,19 +73,20 @@ let myName = "", oppName = "OPPONENT", myScore = 0, oppScore = 0;
 let gameActive = false, inAutoServe = true;
 let wallFlashL = 0, wallFlashR = 0;
 
-const ball = { x:0, y:0, dx:0, dy:0, r:12, speed: 6 };
+const ball = { x:0, y:0, dx:0, dy:0, r:12, speed: 6.5 };
 const bat = { w: 110, h: 18 };
 let myP = { x: 0, y: 0 }, oppP = { x: 0, y: 0 };
 
 // Sound Engine
-const audio = new (window.AudioContext || window.webkitAudioContext)();
+let audioCtx = null;
 function playTone(freq, type, dur, vol=0.1) {
-    const o = audio.createOscillator(); const g = audio.createGain();
+    if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
     o.type = type; o.frequency.value = freq;
-    g.gain.setValueAtTime(vol, audio.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.01, audio.currentTime + dur);
-    o.connect(g); g.connect(audio.destination);
-    o.start(); o.stop(audio.currentTime + dur);
+    g.gain.setValueAtTime(vol, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + dur);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(); o.stop(audioCtx.currentTime + dur);
 }
 
 function resize() {
@@ -105,24 +99,43 @@ window.onresize = resize; resize();
 function connectPeer() {
     myName = document.getElementById('name-in').value.trim().toUpperCase() || "PLAYER";
     document.getElementById('step-1').style.display = 'none';
-    peer = new Peer();
+    
+    // Add debug log
+    console.log("Initializing Peer...");
+    
+    peer = new Peer({
+        debug: 3,
+        config: {'iceServers': [{ 'urls': 'stun:stun.l.google.com:19302' }]} // Added STUN server to help phones find each other
+    });
+
     const joinId = new URLSearchParams(window.location.search).get('join');
 
     peer.on('open', id => {
-        if(joinId) { conn = peer.connect(joinId); setup(); }
-        else {
+        if(joinId) { 
+            conn = peer.connect(joinId); 
+            setup(); 
+        } else {
             isHost = true;
             const url = window.location.origin + window.location.pathname + "?join=" + id;
             document.getElementById('share-url').value = url;
             document.getElementById('step-2').style.display = 'flex';
             document.getElementById('copy-btn').onclick = () => {
-                document.getElementById('share-url').select();
+                const input = document.getElementById('share-url');
+                input.select();
+                input.setSelectionRange(0, 99999);
                 document.execCommand('copy');
                 document.getElementById('copy-btn').innerText = "COPIED!";
             };
         }
     });
+
     peer.on('connection', c => { conn = c; setup(); });
+    
+    // ERROR HANDLER
+    peer.on('error', err => {
+        alert("CONNECTION ERROR: " + err.type + ". Make sure you are using HTTPS!");
+        console.error(err);
+    });
 }
 
 function setup() {
@@ -172,14 +185,13 @@ window.addEventListener('pointermove', e => {
     const rect = canvas.getBoundingClientRect();
     const tx = (e.clientX || (e.touches && e.touches[0].clientX)) - rect.left;
     myP.x = Math.max(0, Math.min(W - bat.w, tx - bat.w/2));
-    if(conn) conn.send({ t: 'm', x: myP.x/W });
+    if(conn && conn.open) conn.send({ t: 'm', x: myP.x/W });
 });
 
 function endGame(n) {
     gameActive = false;
     document.getElementById('winner-name').innerText = n + " WINS!";
     document.getElementById('win-screen').style.display = 'flex';
-    playTone(440, 'square', 0.6);
 }
 
 function loop() {
@@ -189,21 +201,14 @@ function loop() {
     if(isHost) {
         if(!inAutoServe) {
             ball.x += ball.dx; ball.y += ball.dy;
-            
-            // Wall Bouncing
             if(ball.x < ball.r) { ball.dx *= -1; ball.x = ball.r; wall = 'L'; wallFlashL = 20; }
             if(ball.x > W - ball.r) { ball.dx *= -1; ball.x = W-ball.r; wall = 'R'; wallFlashR = 20; }
-
-            // Paddle Collision My Side
             if(ball.y > myP.y - ball.r && ball.y < myP.y + bat.h && ball.x > myP.x && ball.x < myP.x + bat.w) {
                 ball.dy = -ball.speed; ball.dx += (ball.x - (myP.x + bat.w/2)) * 0.25; hit = true;
             }
-            // Paddle Collision Opponent Side
             if(ball.y < oppP.y + bat.h + ball.r && ball.y > oppP.y && ball.x > oppP.x && ball.x < oppP.x + bat.w) {
                 ball.dy = ball.speed; ball.dx += (ball.x - (oppP.x + bat.w/2)) * 0.25; hit = true;
             }
-
-            // Scoring
             if(ball.y < -20) { 
                 myScore++; score = true; 
                 if(myScore >= 15) { endGame(myName); conn.send({t:'win', n:myName}); } 
@@ -215,38 +220,23 @@ function loop() {
                 else { startAutoServe(true); announce("POINT!"); }
             }
         }
-        conn.send({ t: 's', bx: ball.x/W, by: ball.y/H, s1: myScore, s2: oppScore, hit, score, wall });
+        if(conn && conn.open) conn.send({ t: 's', bx: ball.x/W, by: ball.y/H, s1: myScore, s2: oppScore, hit, score, wall });
     }
 
-    // DRAWING
     ctx.fillStyle = "#080808"; ctx.fillRect(0,0,W,H);
-    
-    // Net & Lines
     ctx.strokeStyle = "rgba(255,255,255,0.05)"; ctx.setLineDash([10,10]);
     ctx.beginPath(); ctx.moveTo(0, H/2); ctx.lineTo(W, H/2); ctx.stroke();
-    
-    // Bouncy Walls Visual
     ctx.setLineDash([]);
     if(wallFlashL > 0) { ctx.fillStyle = `rgba(204,255,0,${wallFlashL/20})`; ctx.fillRect(0,0,10,H); wallFlashL--; }
     if(wallFlashR > 0) { ctx.fillStyle = `rgba(204,255,0,${wallFlashR/20})`; ctx.fillRect(W-10,0,10,H); wallFlashR--; }
-
-    // Paddles
     ctx.shadowBlur = 15; ctx.shadowColor = "#fff"; ctx.fillStyle = "#fff";
-    ctx.fillRect(myP.x, myP.y, bat.w, bat.h);
-    ctx.fillRect(oppP.x, oppP.y, bat.w, bat.h);
-
-    // Ball
-    ctx.shadowBlur = 20; ctx.shadowColor = varColor('--neon'); ctx.fillStyle = varColor('--neon');
+    ctx.fillRect(myP.x, myP.y, bat.w, bat.h); ctx.fillRect(oppP.x, oppP.y, bat.w, bat.h);
+    ctx.shadowBlur = 20; ctx.shadowColor = "#ccff00"; ctx.fillStyle = "#ccff00";
     ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI*2); ctx.fill();
     ctx.shadowBlur = 0;
-
-    document.getElementById('my-s').innerText = myScore;
-    document.getElementById('opp-s').innerText = oppScore;
-    
+    document.getElementById('my-s').innerText = myScore; document.getElementById('opp-s').innerText = oppScore;
     requestAnimationFrame(loop);
 }
-
-function varColor(n) { return getComputedStyle(document.documentElement).getPropertyValue(n); }
 </script>
 </body>
 </html>
