@@ -3,239 +3,340 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neon Pro | Auto-Tennis</title>
-    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <title>Neon Pro | Global Circuit</title>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <style>
-        :root { --neon: #ccff00; --bg: #050505; }
-        * { touch-action: none; box-sizing: border-box; -webkit-user-select: none; }
-        body { background: var(--bg); color: #fff; margin: 0; overflow: hidden; height: 100vh; font-family: 'Arial Black', sans-serif; display: flex; flex-direction: column; }
-        #hud { padding: 30px; display: flex; justify-content: space-between; background: linear-gradient(180deg, rgba(204,255,0,0.1) 0%, transparent 100%); }
-        .p-info { display: flex; flex-direction: column; }
-        .name-lbl { font-size: 14px; color: var(--neon); letter-spacing: 3px; opacity: 0.8; }
-        .score-val { font-size: 80px; font-weight: 900; line-height: 0.8; text-shadow: 0 0 20px var(--neon); }
-        #court-wrap { position: relative; flex: 1; margin: 10px 20px 30px; border-left: 6px solid #222; border-right: 6px solid #222; border-radius: 10px; background: #080808; overflow: hidden; }
-        canvas { width: 100%; height: 100%; display: block; }
-        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.98); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 20px; backdrop-filter: blur(10px); }
-        .modal { width: 100%; max-width: 400px; text-align: center; }
-        input { width: 100%; padding: 20px; background: #111; border: 2px solid var(--neon); color: #fff; border-radius: 15px; font-size: 20px; margin-bottom: 20px; text-align: center; }
-        .btn { width: 100%; padding: 20px; background: var(--neon); color: #000; border: none; border-radius: 15px; font-weight: 900; font-size: 18px; cursor: pointer; text-transform: uppercase; box-shadow: 0 0 20px rgba(204,255,0,0.4); }
-        #announcer { position: absolute; top: 50%; width: 100%; text-align: center; font-size: 40px; color: #fff; font-weight: 900; pointer-events: none; opacity: 0; transition: 0.3s; z-index: 5; }
-        #announcer.show { opacity: 1; transform: scale(1.2); }
+        :root { --neon: #ccff00; --bg: #050505; --turbo: #ff0055; --cyan: #00fbff; }
+        * { touch-action: none; box-sizing: border-box; -webkit-user-select: none; outline: none; }
+        body { background: var(--bg); color: #fff; margin: 0; overflow: hidden; height: 100vh; font-family: 'Inter', 'Segoe UI', sans-serif; }
+        
+        /* Premium HUD */
+        #hud { 
+            padding: 20px 30px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            background: rgba(255,255,255,0.03);
+            border-bottom: 1px solid #222; 
+            position: relative; 
+            z-index: 10; 
+        }
+        .p-box { display: flex; flex-direction: column; min-width: 80px; }
+        .name { font-size: 11px; text-transform: uppercase; letter-spacing: 2.5px; color: #888; margin-bottom: 4px; font-weight: 700; }
+        .score { font-size: 48px; font-weight: 900; font-variant-numeric: tabular-nums; line-height: 1; text-shadow: 0 0 15px rgba(255,255,255,0.2); }
+        
+        #speed-tag { 
+            font-size: 10px; 
+            color: var(--neon); 
+            border: 1.5px solid var(--neon); 
+            padding: 4px 12px; 
+            border-radius: 30px; 
+            font-weight: 900;
+            transition: 0.3s; 
+            letter-spacing: 1px;
+            text-shadow: 0 0 5px var(--neon);
+        }
+
+        /* Game Stage */
+        #game-container { 
+            position: relative; 
+            width: 100%; 
+            height: 65vh; 
+            border-left: 6px solid #1a1a1a; 
+            border-right: 6px solid #1a1a1a; 
+            transition: transform 0.1s ease-out, border-color 0.1s; 
+            margin-top: 5px;
+        }
+        canvas { width: 100%; height: 100%; display: block; background: radial-gradient(circle at center, #111 0%, #000 100%); }
+
+        /* Modern Overlays */
+        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.92); display: flex; justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(12px); }
+        .modal { width: 85%; max-width: 380px; text-align: center; padding: 40px 20px; border-radius: 24px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.1); }
+        h1 { font-size: 36px; font-weight: 900; margin-bottom: 20px; letter-spacing: -1px; background: linear-gradient(135deg, #fff 30%, var(--neon) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        
+        input { 
+            width: 100%; padding: 20px; background: #000; border: 1px solid #333; color: #fff; 
+            border-radius: 16px; font-size: 16px; margin-bottom: 20px; text-align: center; 
+            transition: 0.3s; font-weight: 600;
+        }
+        input:focus { border-color: var(--neon); box-shadow: 0 0 20px rgba(204, 255, 0, 0.2); }
+        
+        .btn { 
+            width: 100%; padding: 20px; background: var(--neon); color: #000; border: none; 
+            border-radius: 16px; font-weight: 800; cursor: pointer; transition: 0.2s; 
+            font-size: 16px; text-transform: uppercase; letter-spacing: 1px;
+        }
+        .btn:active { transform: scale(0.96); opacity: 0.9; }
+        
+        #link-box { 
+            font-size: 13px; color: var(--cyan); background: rgba(0, 251, 255, 0.05); 
+            padding: 18px; border-radius: 12px; word-break: break-all; margin-top: 15px; 
+            border: 1px dashed rgba(0, 251, 255, 0.3); font-family: monospace;
+        }
     </style>
 </head>
 <body>
 
 <div id="hud">
-    <div class="p-info">
-        <div id="opp-n" class="name-lbl">SEARCHING...</div>
-        <div class="score-val" id="opp-s">0</div>
-    </div>
-    <div class="p-info" style="text-align:right">
-        <div id="my-n" class="name-lbl">YOU</div>
-        <div class="score-val" id="my-s">0</div>
-    </div>
+    <div class="p-box"><div id="p2-n" class="name">Opponent</div><div id="s2" class="score">0</div></div>
+    <div id="speed-tag">LVL 1</div>
+    <div class="p-box" style="text-align:right"><div id="p1-n" class="name">You</div><div id="s1" class="score">0</div></div>
 </div>
 
-<div id="court-wrap">
+<div id="game-container">
     <canvas id="game"></canvas>
-    <div id="announcer">GO!</div>
 </div>
 
-<div id="step-1" class="overlay">
+<div id="step-name" class="overlay">
     <div class="modal">
-        <h1 style="color:var(--neon); font-size: 45px; margin-bottom: 10px;">NEON PRO</h1>
-        <p style="color:#666; margin-bottom:30px;">FIRST TO 15 WINS</p>
-        <input type="text" id="name-in" placeholder="ENTER NAME" maxlength="10">
-        <button class="btn" onclick="connectPeer()">JOIN CIRCUIT</button>
+        <h1>NEON PONG</h1>
+        <input type="text" id="name-input" placeholder="ENTER YOUR NAME">
+        <button class="btn" onclick="initGame()">CREATE MATCH</button>
     </div>
 </div>
 
-<div id="step-2" class="overlay" style="display:none;">
+<div id="step-share" class="overlay" style="display:none">
     <div class="modal">
-        <h2 style="color:var(--neon)">SEND INVITE</h2>
-        <input type="text" id="share-url" readonly style="font-size: 12px; border-style: dashed;">
-        <button class="btn" id="copy-btn">COPY LINK</button>
+        <h2 style="color:var(--neon); margin-top:0">ARENA READY</h2>
+        <p style="color:#888; line-height: 1.5">Share this link with your opponent to start the circuit:</p>
+        <div id="link-box">GENERATING...</div>
+        <button class="btn" style="margin-top:25px" onclick="copyUniqueLink()">COPY LINK</button>
     </div>
 </div>
 
-<div id="win-screen" class="overlay" style="display:none;">
+<div id="step-win" class="overlay" style="display:none">
     <div class="modal">
-        <h1 id="winner-name" style="color:var(--neon); font-size: 50px;">WINNER!</h1>
-        <button class="btn" onclick="location.reload()">REMATCH</button>
+        <h1 id="win-txt">WINNER</h1>
+        <p style="color:#666; margin-bottom: 25px;">Championship Limit Reached</p>
+        <button class="btn" onclick="rematch()">PLAY AGAIN</button>
     </div>
 </div>
 
 <script>
+// --- CONFIG ---
+const firebaseConfig = {
+    apiKey: "AIzaSyCkpSNJP6-puaQsB9H5ZX_pp9alrbR58lI",
+    authDomain: "pinga-8bba9.firebaseapp.com",
+    databaseURL: "https://pinga-8bba9-default-rtdb.firebaseio.com",
+    projectId: "pinga-8bba9",
+    storageBucket: "pinga-8bba9.firebasestorage.app",
+    messagingSenderId: "751196556015",
+    appId: "1:751196556015:web:504f02ccc79778c41da91a"
+};
+
+firebase.initializeApp(firebaseConfig);
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+function playSound(freq, type="square", dur=0.1) {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = type; osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + dur);
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.start(); osc.stop(audioCtx.currentTime + dur);
+}
+
+// --- GAME STATE ---
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
-let W, H, isHost = false, conn = null, peer = null;
-let myName = "", oppName = "OPPONENT", myScore = 0, oppScore = 0;
-let gameActive = false, inAutoServe = true;
-let wallFlashL = 0, wallFlashR = 0;
+const container = document.getElementById('game-container');
+let W, H, role, matchRef, hitCount = 0;
+let lastScorer = null; // Track who scored to aim the reset ball
+let myName = localStorage.getItem('pName') || "";
+document.getElementById('name-input').value = myName;
 
-const ball = { x:0, y:0, dx:0, dy:0, r:12, speed: 6.5 };
-const bat = { w: 110, h: 18 };
-let myP = { x: 0, y: 0 }, oppP = { x: 0, y: 0 };
+let game = {
+    p1X: 0.5, p2X: 0.5,
+    ball: { x: 0.5, y: 0.5, dx: 0.005, dy: 0.005, size: 8 },
+    scores: { p1: 0, p2: 0 },
+    speed: 1
+};
 
-// Sound Engine
-let audioCtx = null;
-function playTone(freq, type, dur, vol=0.1) {
-    if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
-    o.type = type; o.frequency.value = freq;
-    g.gain.setValueAtTime(vol, audioCtx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + dur);
-    o.connect(g); g.connect(audioCtx.destination);
-    o.start(); o.stop(audioCtx.currentTime + dur);
+function initGame() {
+    myName = document.getElementById('name-input').value.trim().toUpperCase() || "PLAYER";
+    localStorage.setItem('pName', myName);
+    document.getElementById('step-name').style.display = 'none';
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const matchId = urlParams.get('m');
+
+    if(matchId) {
+        role = 'p2';
+        matchRef = firebase.database().ref("matches/" + matchId);
+        matchRef.update({ p2N: myName, active: true });
+        startSync();
+    } else {
+        role = 'p1';
+        const newId = Math.random().toString(36).substring(2, 9);
+        matchRef = firebase.database().ref("matches/" + newId);
+        const link = window.location.origin + window.location.pathname + "?m=" + newId;
+        document.getElementById('link-box').innerText = link;
+        document.getElementById('step-share').style.display = 'flex';
+        
+        matchRef.set({
+            p1N: myName, p2N: "WAITING...",
+            p1X: 0.5, p2X: 0.5,
+            ball: game.ball, scores: game.scores,
+            active: false, speed: 1
+        });
+
+        matchRef.child('active').on('value', snap => {
+            if(snap.val() === true) {
+                document.getElementById('step-share').style.display = 'none';
+                startSync();
+            }
+        });
+    }
 }
 
-function resize() {
-    W = canvas.width = canvas.offsetWidth; H = canvas.height = canvas.offsetHeight;
-    myP.x = W/2 - bat.w/2; myP.y = H - 50;
-    oppP.x = W/2 - bat.w/2; oppP.y = 50;
+function copyUniqueLink() {
+    const txt = document.getElementById('link-box').innerText;
+    navigator.clipboard.writeText(txt);
+    alert("Match Link Copied!");
 }
-window.onresize = resize; resize();
 
-function connectPeer() {
-    myName = document.getElementById('name-in').value.trim().toUpperCase() || "PLAYER";
-    document.getElementById('step-1').style.display = 'none';
-    
-    // Add debug log
-    console.log("Initializing Peer...");
-    
-    peer = new Peer({
-        debug: 3,
-        config: {'iceServers': [{ 'urls': 'stun:stun.l.google.com:19302' }]} // Added STUN server to help phones find each other
+function rematch() {
+    matchRef.update({
+        scores: { p1: 0, p2: 0 },
+        ball: { x: 0.5, y: 0.5, dx: 0.005, dy: 0.005, size: 8 },
+        speed: 1
     });
+}
 
-    const joinId = new URLSearchParams(window.location.search).get('join');
-
-    peer.on('open', id => {
-        if(joinId) { 
-            conn = peer.connect(joinId); 
-            setup(); 
+function startSync() {
+    matchRef.on('value', snap => {
+        const d = snap.val();
+        if(!d) return;
+        document.getElementById('p1-n').innerText = d.p1N;
+        document.getElementById('p2-n').innerText = d.p2N;
+        document.getElementById('s1').innerText = d.scores.p1;
+        document.getElementById('s2').innerText = d.scores.p2;
+        
+        const speedTag = document.getElementById('speed-tag');
+        speedTag.innerText = "LVL " + d.speed;
+        if(d.speed > 1 && (d.speed - 1) % 3 === 0) {
+            speedTag.style.background = "var(--turbo)";
+            speedTag.style.borderColor = "var(--turbo)";
+            speedTag.innerText = "TURBO ON";
         } else {
-            isHost = true;
-            const url = window.location.origin + window.location.pathname + "?join=" + id;
-            document.getElementById('share-url').value = url;
-            document.getElementById('step-2').style.display = 'flex';
-            document.getElementById('copy-btn').onclick = () => {
-                const input = document.getElementById('share-url');
-                input.select();
-                input.setSelectionRange(0, 99999);
-                document.execCommand('copy');
-                document.getElementById('copy-btn').innerText = "COPIED!";
-            };
+            speedTag.style.background = "transparent";
+            speedTag.style.borderColor = "var(--neon)";
+        }
+        
+        game.p1X = d.p1X; game.p2X = d.p2X;
+        game.scores = d.scores;
+        game.speed = d.speed;
+        if(role === 'p2') game.ball = d.ball;
+
+        if(d.scores.p1 >= 30 || d.scores.p2 >= 30) {
+            document.getElementById('win-txt').innerText = (d.scores.p1 >= 30 ? d.p1N : d.p2N) + " WINS!";
+            document.getElementById('step-win').style.display = 'flex';
+        } else {
+            document.getElementById('step-win').style.display = 'none';
         }
     });
-
-    peer.on('connection', c => { conn = c; setup(); });
-    
-    // ERROR HANDLER
-    peer.on('error', err => {
-        alert("CONNECTION ERROR: " + err.type + ". Make sure you are using HTTPS!");
-        console.error(err);
-    });
-}
-
-function setup() {
-    conn.on('open', () => {
-        document.getElementById('step-2').style.display = 'none';
-        conn.send({ t: 'name', n: myName });
-        gameActive = true; 
-        if(isHost) startAutoServe(true);
-        loop();
-    });
-    conn.on('data', d => {
-        if(d.t === 'name') { oppName = d.n; document.getElementById('opp-n').innerText = d.n; }
-        if(d.t === 'm') { oppP.x = (1 - d.x) * W - bat.w; }
-        if(d.t === 's') {
-            ball.x = (1 - d.bx) * W; ball.y = (1 - d.by) * H;
-            myScore = d.s2; oppScore = d.s1;
-            if(d.hit) playTone(400, 'triangle', 0.15);
-            if(d.wall === 'L') wallFlashL = 20;
-            if(d.wall === 'R') wallFlashR = 20;
-            if(d.score) { playTone(150, 'sawtooth', 0.4); announce("POINT!"); }
-        }
-        if(d.t === 'win') endGame(d.n);
-    });
-}
-
-function announce(txt) {
-    const el = document.getElementById('announcer');
-    el.innerText = txt; el.classList.add('show');
-    setTimeout(() => el.classList.remove('show'), 1000);
-}
-
-function startAutoServe(toMe) {
-    inAutoServe = true;
-    ball.dx = 0; ball.dy = 0;
-    ball.x = W/2; ball.y = H/2;
-    setTimeout(() => {
-        if(!gameActive) return;
-        ball.dy = toMe ? ball.speed : -ball.speed;
-        ball.dx = (Math.random() - 0.5) * 8;
-        inAutoServe = false;
-        playTone(600, 'sine', 0.2);
-    }, 1500);
+    if(role === 'p1') setInterval(hostLoop, 16);
+    draw();
 }
 
 window.addEventListener('pointermove', e => {
-    if(!gameActive) return;
     const rect = canvas.getBoundingClientRect();
-    const tx = (e.clientX || (e.touches && e.touches[0].clientX)) - rect.left;
-    myP.x = Math.max(0, Math.min(W - bat.w, tx - bat.w/2));
-    if(conn && conn.open) conn.send({ t: 'm', x: myP.x/W });
+    const x = Math.max(0.1, Math.min(0.9, (e.clientX - rect.left) / rect.width));
+    if(role === 'p1') matchRef.update({ p1X: x });
+    else matchRef.update({ p2X: x });
 });
 
-function endGame(n) {
-    gameActive = false;
-    document.getElementById('winner-name').innerText = n + " WINS!";
-    document.getElementById('win-screen').style.display = 'flex';
+function flashWalls(intense = false) {
+    const colors = intense ? ['#ff0055', '#ff00ff'] : ['#ccff00', '#00fbff', '#ffff00'];
+    const randomColor = colors[Math.floor(Math.random() * colors.length)];
+    container.style.borderColor = randomColor;
+    container.style.boxShadow = `0 0 ${intense ? 40 : 20}px ${randomColor}`;
+    if(intense) container.style.transform = `translate(${(Math.random()-0.5)*10}px, ${(Math.random()-0.5)*10}px)`;
+    
+    setTimeout(() => {
+        container.style.borderColor = '#1a1a1a';
+        container.style.boxShadow = 'none';
+        container.style.transform = 'translate(0,0)';
+    }, 100);
 }
 
-function loop() {
-    if(!gameActive) return;
-    let hit = false, score = false, wall = null;
+function hostLoop() {
+    let b = game.ball;
+    b.x += b.dx; b.y += b.dy;
 
-    if(isHost) {
-        if(!inAutoServe) {
-            ball.x += ball.dx; ball.y += ball.dy;
-            if(ball.x < ball.r) { ball.dx *= -1; ball.x = ball.r; wall = 'L'; wallFlashL = 20; }
-            if(ball.x > W - ball.r) { ball.dx *= -1; ball.x = W-ball.r; wall = 'R'; wallFlashR = 20; }
-            if(ball.y > myP.y - ball.r && ball.y < myP.y + bat.h && ball.x > myP.x && ball.x < myP.x + bat.w) {
-                ball.dy = -ball.speed; ball.dx += (ball.x - (myP.x + bat.w/2)) * 0.25; hit = true;
-            }
-            if(ball.y < oppP.y + bat.h + ball.r && ball.y > oppP.y && ball.x > oppP.x && ball.x < oppP.x + bat.w) {
-                ball.dy = ball.speed; ball.dx += (ball.x - (oppP.x + bat.w/2)) * 0.25; hit = true;
-            }
-            if(ball.y < -20) { 
-                myScore++; score = true; 
-                if(myScore >= 15) { endGame(myName); conn.send({t:'win', n:myName}); } 
-                else { startAutoServe(false); announce("POINT!"); }
-            }
-            if(ball.y > H + 20) { 
-                oppScore++; score = true; 
-                if(oppScore >= 15) { endGame(oppName); conn.send({t:'win', n:oppName}); } 
-                else { startAutoServe(true); announce("POINT!"); }
-            }
-        }
-        if(conn && conn.open) conn.send({ t: 's', bx: ball.x/W, by: ball.y/H, s1: myScore, s2: oppScore, hit, score, wall });
+    // Side Wall Bouncing
+    if(b.x < 0.02 || b.x > 0.98) { 
+        b.dx *= -1.05; 
+        flashWalls(false);
+        playSound(300, "sine"); 
     }
 
-    ctx.fillStyle = "#080808"; ctx.fillRect(0,0,W,H);
-    ctx.strokeStyle = "rgba(255,255,255,0.05)"; ctx.setLineDash([10,10]);
-    ctx.beginPath(); ctx.moveTo(0, H/2); ctx.lineTo(W, H/2); ctx.stroke();
-    ctx.setLineDash([]);
-    if(wallFlashL > 0) { ctx.fillStyle = `rgba(204,255,0,${wallFlashL/20})`; ctx.fillRect(0,0,10,H); wallFlashL--; }
-    if(wallFlashR > 0) { ctx.fillStyle = `rgba(204,255,0,${wallFlashR/20})`; ctx.fillRect(W-10,0,10,H); wallFlashR--; }
-    ctx.shadowBlur = 15; ctx.shadowColor = "#fff"; ctx.fillStyle = "#fff";
-    ctx.fillRect(myP.x, myP.y, bat.w, bat.h); ctx.fillRect(oppP.x, oppP.y, bat.w, bat.h);
-    ctx.shadowBlur = 20; ctx.shadowColor = "#ccff00"; ctx.fillStyle = "#ccff00";
-    ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI*2); ctx.fill();
-    ctx.shadowBlur = 0;
-    document.getElementById('my-s').innerText = myScore; document.getElementById('opp-s').innerText = oppScore;
-    requestAnimationFrame(loop);
+    // Paddle Collisions
+    const hitP1 = b.y > 0.90 && b.x > game.p1X - 0.12 && b.x < game.p1X + 0.12;
+    const hitP2 = b.y < 0.10 && b.x > game.p2X - 0.12 && b.x < game.p2X + 0.12;
+
+    if(hitP1 || hitP2) {
+        b.dy *= -1.1; // Accelerate on every paddle hit
+        hitCount++;
+        flashWalls(hitCount % 3 === 0);
+        playSound(hitP1 ? 600 : 800);
+
+        if(hitCount % 3 === 0) {
+            game.speed++;
+            b.dx *= 1.25; b.dy *= 1.25;
+            b.size = 5; 
+            playSound(1200, "square", 0.05);
+        } else {
+            b.size = 8;
+        }
+    }
+
+    // Scoring & Targeted Reset
+    if(b.y < 0) { 
+        game.scores.p1++; 
+        resetBall(b, 'p2'); // Point to P1 -> Ball goes to P2
+        playSound(150, "sawtooth", 0.3); 
+    }
+    if(b.y > 1) { 
+        game.scores.p2++; 
+        resetBall(b, 'p1'); // Point to P2 -> Ball goes to P1
+        playSound(150, "sawtooth", 0.3); 
+    }
+
+    matchRef.update({ ball: b, scores: game.scores, speed: game.speed });
+}
+
+function resetBall(b, targetPlayer) {
+    hitCount = 0;
+    b.x = 0.5; b.y = 0.5;
+    b.size = 8;
+    game.speed = 1;
+    
+    // Launch towards the player who just lost the point
+    b.dx = 0.005 * (Math.random() > 0.5 ? 1 : -1);
+    b.dy = (targetPlayer === 'p1') ? 0.005 : -0.005;
+}
+
+function draw() {
+    W = canvas.width = container.offsetWidth; H = canvas.height = container.offsetHeight;
+    ctx.clearRect(0,0,W,H);
+
+    // Ball
+    const isTurbo = (game.speed > 1 && (game.speed - 1) % 3 === 0);
+    ctx.fillStyle = isTurbo ? "#ff0055" : "#ccff00";
+    ctx.shadowBlur = isTurbo ? 35 : 20;
+    ctx.shadowColor = ctx.fillStyle;
+    ctx.beginPath(); ctx.arc(game.ball.x * W, game.ball.y * H, game.ball.size, 0, Math.PI*2); ctx.fill();
+
+    // Paddles
+    ctx.shadowBlur = 15;
+    ctx.fillStyle = "#fff"; ctx.shadowColor = "#fff";
+    ctx.fillRect(game.p1X * W - 50, H - 20, 100, 10); // Player 1 (Bottom)
+    ctx.fillRect(game.p2X * W - 50, 10, 100, 10);  // Player 2 (Top)
+
+    requestAnimationFrame(draw);
 }
 </script>
 </body>
