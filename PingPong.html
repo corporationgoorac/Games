@@ -3,118 +3,130 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neon Pro | Global Circuit</title>
+    <title>Neon Solo Race | Global Circuit</title>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <style>
-        :root { --neon: #ccff00; --bg: #050505; --turbo: #ff0055; --cyan: #00fbff; }
+        :root { --neon: #ccff00; --bg: #050505; --turbo: #ff0055; --cyan: #00fbff; --loss: #ff3300; }
         * { touch-action: none; box-sizing: border-box; -webkit-user-select: none; outline: none; }
-        body { background: var(--bg); color: #fff; margin: 0; overflow: hidden; height: 100vh; font-family: 'Inter', 'Segoe UI', sans-serif; }
         
-        /* Premium HUD */
+        body { 
+            background: var(--bg); 
+            color: #fff; 
+            margin: 0; 
+            padding: 0;
+            overflow: hidden; 
+            height: 100vh; 
+            width: 100vw;
+            font-family: 'Segoe UI', sans-serif; 
+            display: flex; 
+            flex-direction: column; 
+        }
+        
         #hud { 
-            padding: 20px 30px; 
+            padding: 10px 20px; 
             display: flex; 
             justify-content: space-between; 
             align-items: center; 
-            background: rgba(255,255,255,0.03);
-            border-bottom: 1px solid #222; 
+            background: rgba(20,20,20,0.9); 
+            border-bottom: 1px solid #333; 
             position: relative; 
             z-index: 10; 
-        }
-        .p-box { display: flex; flex-direction: column; min-width: 80px; }
-        .name { font-size: 11px; text-transform: uppercase; letter-spacing: 2.5px; color: #888; margin-bottom: 4px; font-weight: 700; }
-        .score { font-size: 48px; font-weight: 900; font-variant-numeric: tabular-nums; line-height: 1; text-shadow: 0 0 15px rgba(255,255,255,0.2); }
-        
-        #speed-tag { 
-            font-size: 10px; 
-            color: var(--neon); 
-            border: 1.5px solid var(--neon); 
-            padding: 4px 12px; 
-            border-radius: 30px; 
-            font-weight: 900;
-            transition: 0.3s; 
-            letter-spacing: 1px;
-            text-shadow: 0 0 5px var(--neon);
+            height: 100px;
+            flex-shrink: 0;
         }
 
-        /* Game Stage */
-        #game-container { 
+        .p-box { display: flex; flex-direction: column; min-width: 120px; }
+        .name { font-size: 10px; text-transform: uppercase; letter-spacing: 2px; color: #888; margin-bottom: 2px; font-weight: 700; }
+        .score-row { display: flex; align-items: baseline; gap: 8px; }
+        .score { font-size: 32px; font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; }
+        .high-label { font-size: 9px; color: var(--cyan); opacity: 0.8; }
+        
+        #goal-tag { 
+            display: flex; flex-direction: column; align-items: center; gap: 2px;
+            font-size: 10px; color: var(--turbo); border: 1.5px solid var(--turbo); 
+            padding: 6px 15px; border-radius: 8px; font-weight: 900; background: rgba(255,0,85,0.05);
+        }
+
+        .energy-container { width: 100%; height: 3px; background: #222; margin-top: 5px; border-radius: 1px; overflow: hidden; }
+        .energy-fill { height: 100%; width: 0%; background: var(--neon); transition: width 0.3s ease; box-shadow: 0 0 10px var(--neon); }
+
+        #game-area { 
             position: relative; 
+            flex-grow: 1; 
             width: 100%; 
-            height: 65vh; 
-            border-left: 6px solid #1a1a1a; 
-            border-right: 6px solid #1a1a1a; 
-            transition: transform 0.1s ease-out, border-color 0.1s; 
-            margin-top: 5px;
+            background: #000; 
+            overflow: hidden; 
+            border-top: 2px solid #222;
         }
-        canvas { width: 100%; height: 100%; display: block; background: radial-gradient(circle at center, #111 0%, #000 100%); }
+        canvas { width: 100%; height: 100%; display: block; }
 
-        /* Modern Overlays */
-        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.92); display: flex; justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(12px); }
-        .modal { width: 85%; max-width: 380px; text-align: center; padding: 40px 20px; border-radius: 24px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.1); }
-        h1 { font-size: 36px; font-weight: 900; margin-bottom: 20px; letter-spacing: -1px; background: linear-gradient(135deg, #fff 30%, var(--neon) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: flex; justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(10px); }
+        .modal { width: 90%; max-width: 400px; text-align: center; padding: 30px 20px; border-radius: 24px; background: #111; border: 1px solid #333; }
+        h1 { font-size: 32px; margin-bottom: 10px; color: var(--neon); margin-top:0; }
+        p { color: #888; font-size: 14px; margin-bottom: 20px; }
         
-        input { 
-            width: 100%; padding: 20px; background: #000; border: 1px solid #333; color: #fff; 
-            border-radius: 16px; font-size: 16px; margin-bottom: 20px; text-align: center; 
-            transition: 0.3s; font-weight: 600;
-        }
-        input:focus { border-color: var(--neon); box-shadow: 0 0 20px rgba(204, 255, 0, 0.2); }
-        
-        .btn { 
-            width: 100%; padding: 20px; background: var(--neon); color: #000; border: none; 
-            border-radius: 16px; font-weight: 800; cursor: pointer; transition: 0.2s; 
-            font-size: 16px; text-transform: uppercase; letter-spacing: 1px;
-        }
-        .btn:active { transform: scale(0.96); opacity: 0.9; }
-        
-        #link-box { 
-            font-size: 13px; color: var(--cyan); background: rgba(0, 251, 255, 0.05); 
-            padding: 18px; border-radius: 12px; word-break: break-all; margin-top: 15px; 
-            border: 1px dashed rgba(0, 251, 255, 0.3); font-family: monospace;
-        }
+        input { width: 100%; padding: 18px; background: #000; border: 1px solid #333; color: #fff; border-radius: 12px; font-size: 16px; margin-bottom: 20px; text-align: center; }
+        .btn { width: 100%; padding: 18px; background: var(--neon); color: #000; border: none; border-radius: 12px; font-weight: 800; cursor: pointer; text-transform: uppercase; transition: transform 0.1s; }
+        .btn:active { transform: scale(0.98); }
+        #link-box { font-size: 11px; color: var(--cyan); background: #000; padding: 12px; border-radius: 10px; word-break: break-all; margin-top: 15px; border: 1px dashed #444; }
     </style>
 </head>
 <body>
 
 <div id="hud">
-    <div class="p-box"><div id="p2-n" class="name">Opponent</div><div id="s2" class="score">0</div></div>
-    <div id="speed-tag">LVL 1</div>
-    <div class="p-box" style="text-align:right"><div id="p1-n" class="name">You</div><div id="s1" class="score">0</div></div>
+    <div class="p-box">
+        <div id="opp-n" class="name">Opponent</div>
+        <div class="score-row">
+            <div id="opp-s" class="score">0</div>
+            <div class="high-label">BEST: <span id="opp-h">0</span></div>
+        </div>
+        <div class="energy-container"><div id="opp-energy" class="energy-fill" style="background:var(--turbo)"></div></div>
+    </div>
+    
+    <div id="goal-tag">
+        <span>GOAL: 50</span>
+        <span style="font-size:8px; opacity:0.6">VS MODE</span>
+    </div>
+
+    <div class="p-box" style="text-align:right">
+        <div id="my-n" class="name">You</div>
+        <div class="score-row" style="flex-direction: row-reverse;">
+            <div id="my-s" class="score">0</div>
+            <div class="high-label">BEST: <span id="my-h">0</span></div>
+        </div>
+        <div class="energy-container" style="align-self: flex-end;"><div id="my-energy" class="energy-fill"></div></div>
+    </div>
 </div>
 
-<div id="game-container">
-    <canvas id="game"></canvas>
-</div>
+<div id="game-area"><canvas id="game"></canvas></div>
 
 <div id="step-name" class="overlay">
     <div class="modal">
         <h1>NEON PONG</h1>
-        <input type="text" id="name-input" placeholder="ENTER YOUR NAME">
-        <button class="btn" onclick="initGame()">CREATE MATCH</button>
+        <p>Return with the center for <b>PERFECT</b> bonus!<br>Reach 50 to win. <b>-5 = ELIMINATED</b></p>
+        <input type="text" id="name-input" placeholder="ENTER NAME">
+        <button class="btn" onclick="initGame()">START RACE</button>
     </div>
 </div>
 
 <div id="step-share" class="overlay" style="display:none">
     <div class="modal">
-        <h2 style="color:var(--neon); margin-top:0">ARENA READY</h2>
-        <p style="color:#888; line-height: 1.5">Share this link with your opponent to start the circuit:</p>
-        <div id="link-box">GENERATING...</div>
-        <button class="btn" style="margin-top:25px" onclick="copyUniqueLink()">COPY LINK</button>
+        <h2 style="color:var(--neon)">INVITE OPPONENT</h2>
+        <div id="link-box">...</div>
+        <button class="btn" id="copy-btn" style="margin-top:20px" onclick="copyLink()">COPY LINK</button>
     </div>
 </div>
 
 <div id="step-win" class="overlay" style="display:none">
     <div class="modal">
-        <h1 id="win-txt">WINNER</h1>
-        <p style="color:#666; margin-bottom: 25px;">Championship Limit Reached</p>
-        <button class="btn" onclick="rematch()">PLAY AGAIN</button>
+        <h1 id="status-txt">MATCH OVER</h1>
+        <p id="winner-detail" style="font-size: 18px; color: #fff;"></p>
+        <button class="btn" id="rematch-btn" onclick="requestRematch()">REMATCH</button>
     </div>
 </div>
 
 <script>
-// --- CONFIG ---
 const firebaseConfig = {
     apiKey: "AIzaSyCkpSNJP6-puaQsB9H5ZX_pp9alrbR58lI",
     authDomain: "pinga-8bba9.firebaseapp.com",
@@ -126,217 +138,323 @@ const firebaseConfig = {
 };
 
 firebase.initializeApp(firebaseConfig);
-const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
-function playSound(freq, type="square", dur=0.1) {
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.type = type; osc.frequency.value = freq;
-    gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + dur);
-    osc.connect(gain); gain.connect(audioCtx.destination);
-    osc.start(); osc.stop(audioCtx.currentTime + dur);
-}
-
-// --- GAME STATE ---
+const db = firebase.database();
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
-const container = document.getElementById('game-container');
-let W, H, role, matchRef, hitCount = 0;
-let lastScorer = null; // Track who scored to aim the reset ball
-let myName = localStorage.getItem('pName') || "";
-document.getElementById('name-input').value = myName;
+const area = document.getElementById('game-area');
 
-let game = {
-    p1X: 0.5, p2X: 0.5,
-    ball: { x: 0.5, y: 0.5, dx: 0.005, dy: 0.005, size: 8 },
-    scores: { p1: 0, p2: 0 },
-    speed: 1
+let highScore = parseInt(localStorage.getItem('neonHighScore')) || 0;
+document.getElementById('my-h').innerText = highScore;
+
+window.onload = () => {
+    const savedName = localStorage.getItem('neonPlayerName');
+    if(savedName) document.getElementById('name-input').value = savedName;
+    resize();
 };
 
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+function playSound(freq, type, dur, vol=0.08) {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + dur);
+}
+
+let W, H, role, matchRef, gameActive = false;
+let myScore = 0, oppScore = 0;
+let ball = { x: 0.5, y: 0.2, dx: 0.006, dy: 0.006 };
+let myPaddleX = 0.5, lastPaddleX = 0.5, paddleVel = 0;
+let trail = [], particles = [], announcements = [];
+let wallFlash = 0, shake = 0;
+let frameCount = 0;
+
+function resize() { 
+    W = canvas.width = area.offsetWidth; 
+    H = canvas.height = area.offsetHeight; 
+}
+window.addEventListener('resize', resize);
+
+function formatName(name) { 
+    if(!name) return "PLAYER";
+    const up = name.toUpperCase();
+    return up.includes("SUMAIYA") ? up + " 💎 🖤" : up; 
+}
+
 function initGame() {
-    myName = document.getElementById('name-input').value.trim().toUpperCase() || "PLAYER";
-    localStorage.setItem('pName', myName);
+    const name = document.getElementById('name-input').value.trim() || "PLAYER";
+    localStorage.setItem('neonPlayerName', name);
     document.getElementById('step-name').style.display = 'none';
-
-    const urlParams = new URLSearchParams(window.location.search);
-    const matchId = urlParams.get('m');
-
-    if(matchId) {
+    const mId = new URLSearchParams(window.location.search).get('m');
+    
+    if(mId) {
         role = 'p2';
-        matchRef = firebase.database().ref("matches/" + matchId);
-        matchRef.update({ p2N: myName, active: true });
-        startSync();
+        matchRef = db.ref("race/" + mId);
+        matchRef.update({ p2N: name, p2S: 0, p2H: highScore, p2Ready: false, active: true });
     } else {
         role = 'p1';
-        const newId = Math.random().toString(36).substring(2, 9);
-        matchRef = firebase.database().ref("matches/" + newId);
-        const link = window.location.origin + window.location.pathname + "?m=" + newId;
-        document.getElementById('link-box').innerText = link;
+        const newId = Math.random().toString(36).substring(2, 7);
+        matchRef = db.ref("race/" + newId);
+        document.getElementById('link-box').innerText = window.location.origin + window.location.pathname + "?m=" + newId;
         document.getElementById('step-share').style.display = 'flex';
-        
-        matchRef.set({
-            p1N: myName, p2N: "WAITING...",
-            p1X: 0.5, p2X: 0.5,
-            ball: game.ball, scores: game.scores,
-            active: false, speed: 1
-        });
-
-        matchRef.child('active').on('value', snap => {
-            if(snap.val() === true) {
-                document.getElementById('step-share').style.display = 'none';
-                startSync();
-            }
-        });
+        matchRef.set({ p1N: name, p1S: 0, p1H: highScore, p1Ready: false, p2N: "WAITING...", p2S: 0, p2H: 0, p2Ready: false, active: false });
     }
-}
-
-function copyUniqueLink() {
-    const txt = document.getElementById('link-box').innerText;
-    navigator.clipboard.writeText(txt);
-    alert("Match Link Copied!");
-}
-
-function rematch() {
-    matchRef.update({
-        scores: { p1: 0, p2: 0 },
-        ball: { x: 0.5, y: 0.5, dx: 0.005, dy: 0.005, size: 8 },
-        speed: 1
-    });
+    startSync();
 }
 
 function startSync() {
     matchRef.on('value', snap => {
         const d = snap.val();
         if(!d) return;
-        document.getElementById('p1-n').innerText = d.p1N;
-        document.getElementById('p2-n').innerText = d.p2N;
-        document.getElementById('s1').innerText = d.scores.p1;
-        document.getElementById('s2').innerText = d.scores.p2;
+        const isP1 = role === 'p1';
+        oppScore = isP1 ? d.p2S : d.p1S;
+        const oppH = isP1 ? d.p2H : d.p1H;
         
-        const speedTag = document.getElementById('speed-tag');
-        speedTag.innerText = "LVL " + d.speed;
-        if(d.speed > 1 && (d.speed - 1) % 3 === 0) {
-            speedTag.style.background = "var(--turbo)";
-            speedTag.style.borderColor = "var(--turbo)";
-            speedTag.innerText = "TURBO ON";
-        } else {
-            speedTag.style.background = "transparent";
-            speedTag.style.borderColor = "var(--neon)";
-        }
-        
-        game.p1X = d.p1X; game.p2X = d.p2X;
-        game.scores = d.scores;
-        game.speed = d.speed;
-        if(role === 'p2') game.ball = d.ball;
+        document.getElementById('opp-n').innerText = formatName(isP1 ? d.p2N : d.p1N);
+        document.getElementById('my-n').innerText = formatName(isP1 ? d.p1N : d.p2N);
+        document.getElementById('opp-s').innerText = oppScore;
+        document.getElementById('opp-h').innerText = oppH || 0;
+        document.getElementById('opp-energy').style.width = Math.min(100, Math.max(0, (oppScore/50) * 100)) + "%";
 
-        if(d.scores.p1 >= 30 || d.scores.p2 >= 30) {
-            document.getElementById('win-txt').innerText = (d.scores.p1 >= 30 ? d.p1N : d.p2N) + " WINS!";
-            document.getElementById('step-win').style.display = 'flex';
-        } else {
-            document.getElementById('step-win').style.display = 'none';
+        if (d.p1Ready && d.p2Ready) {
+            matchRef.update({ p1Ready: false, p2Ready: false, p1S: 0, p2S: 0 });
+            resetLocalGame();
         }
+        if(d.active && !gameActive && !d.p1Ready && !d.p2Ready) {
+            document.getElementById('step-share').style.display = 'none';
+            document.getElementById('step-win').style.display = 'none';
+            gameActive = true;
+            resize();
+            loop();
+        }
+        if(gameActive && (d.p1S >= 50 || d.p2S >= 50 || d.p1S <= -5 || d.p2S <= -5)) endGame(d);
     });
-    if(role === 'p1') setInterval(hostLoop, 16);
-    draw();
+}
+
+function endGame(d) {
+    gameActive = false;
+    document.getElementById('step-win').style.display = 'flex';
+    let myCurrent = (role === 'p1' ? d.p1S : d.p2S);
+    let lostByScore = myCurrent <= -5;
+    let winMsg = "";
+    
+    if (lostByScore) winMsg = "ELIMINATED! (SCORE -5)";
+    else if (myCurrent >= 50) winMsg = "CIRCUIT CHAMPION!";
+    else winMsg = "MATCH LOST";
+
+    document.getElementById('winner-detail').innerText = winMsg;
+}
+
+function requestRematch() {
+    document.getElementById('rematch-btn').innerText = "WAITING...";
+    const up = {}; up[role + "Ready"] = true;
+    matchRef.update(up);
+}
+
+function resetLocalGame() {
+    myScore = 0; trail = []; particles = []; announcements = [];
+    document.getElementById('my-s').innerText = "0";
+    document.getElementById('step-win').style.display = 'none';
+    document.getElementById('rematch-btn').innerText = "REMATCH";
+    resetBall();
+    if (!gameActive) { gameActive = true; loop(); }
 }
 
 window.addEventListener('pointermove', e => {
-    const rect = canvas.getBoundingClientRect();
-    const x = Math.max(0.1, Math.min(0.9, (e.clientX - rect.left) / rect.width));
-    if(role === 'p1') matchRef.update({ p1X: x });
-    else matchRef.update({ p2X: x });
+    let rect = canvas.getBoundingClientRect();
+    lastPaddleX = myPaddleX;
+    myPaddleX = (e.clientX - rect.left) / W;
+    paddleVel = myPaddleX - lastPaddleX;
+    myPaddleX = Math.max(0.1, Math.min(0.9, myPaddleX));
 });
 
-function flashWalls(intense = false) {
-    const colors = intense ? ['#ff0055', '#ff00ff'] : ['#ccff00', '#00fbff', '#ffff00'];
-    const randomColor = colors[Math.floor(Math.random() * colors.length)];
-    container.style.borderColor = randomColor;
-    container.style.boxShadow = `0 0 ${intense ? 40 : 20}px ${randomColor}`;
-    if(intense) container.style.transform = `translate(${(Math.random()-0.5)*10}px, ${(Math.random()-0.5)*10}px)`;
-    
-    setTimeout(() => {
-        container.style.borderColor = '#1a1a1a';
-        container.style.boxShadow = 'none';
-        container.style.transform = 'translate(0,0)';
-    }, 100);
+function spawnParticles(x, y, color, count=8, speed=10) {
+    for(let i=0; i<count; i++) {
+        particles.push({ x, y, vx: (Math.random()-0.5)*speed, vy: (Math.random()-0.5)*speed, life: 1.0, color });
+    }
 }
 
-function hostLoop() {
-    let b = game.ball;
-    b.x += b.dx; b.y += b.dy;
+function announce(txt, color) {
+    announcements.push({ txt, color, y: H/2, opacity: 1 });
+}
 
-    // Side Wall Bouncing
-    if(b.x < 0.02 || b.x > 0.98) { 
-        b.dx *= -1.05; 
-        flashWalls(false);
-        playSound(300, "sine"); 
+function loop() {
+    if(!gameActive) return;
+    frameCount++;
+
+    // Calculate dynamic difficulty speed
+    let speedFactor = 1 + (Math.max(0, myScore) * 0.015);
+    
+    let zigzag = (myScore > 25) ? Math.sin(frameCount * 0.1) * 0.002 : 0;
+    ball.x += (ball.dx * speedFactor) + zigzag;
+    ball.y += (ball.dy * speedFactor);
+    
+    trail.push({x: ball.x, y: ball.y});
+    if(trail.length > 15) trail.shift();
+
+    // Side walls
+    if(ball.x < 0.03 || ball.x > 0.97) {
+        ball.dx *= -1;
+        ball.x = (ball.x < 0.03) ? 0.031 : 0.969;
+        wallFlash = 15; shake = 4;
+        spawnParticles(ball.x*W, ball.y*H, "var(--cyan)");
+        playSound(400, 'sine', 0.05);
+    }
+    // Top wall
+    if(ball.y < 0.03) {
+        ball.dy *= -1;
+        ball.y = 0.031;
+        wallFlash = 15;
+        playSound(600, 'sine', 0.05);
     }
 
-    // Paddle Collisions
-    const hitP1 = b.y > 0.90 && b.x > game.p1X - 0.12 && b.x < game.p1X + 0.12;
-    const hitP2 = b.y < 0.10 && b.x > game.p2X - 0.12 && b.x < game.p2X + 0.12;
-
-    if(hitP1 || hitP2) {
-        b.dy *= -1.1; // Accelerate on every paddle hit
-        hitCount++;
-        flashWalls(hitCount % 3 === 0);
-        playSound(hitP1 ? 600 : 800);
-
-        if(hitCount % 3 === 0) {
-            game.speed++;
-            b.dx *= 1.25; b.dy *= 1.25;
-            b.size = 5; 
-            playSound(1200, "square", 0.05);
-        } else {
-            b.size = 8;
+    // Paddle hit logic
+    let pW = Math.max(0.08, 0.2 - (myScore * 0.002));
+    let paddleY = 0.85; // Fixed height constant
+    
+    if(ball.y >= paddleY && ball.y <= paddleY + 0.03) {
+        let diff = ball.x - myPaddleX;
+        if(Math.abs(diff) < pW/2) {
+            // Collision detected
+            ball.dy = -Math.abs(ball.dy); 
+            ball.y = paddleY - 0.01; // Push ball up to avoid multi-hits
+            ball.dx += (diff * 0.1) + (paddleVel * 0.4); // Add spin
+            
+            if(Math.abs(diff) < 0.02) {
+                updateScore(2);
+                announce("PERFECT!", "var(--neon)");
+                shake = 10;
+                playSound(1200, 'square', 0.2, 0.15);
+            } else {
+                updateScore(1);
+                playSound(800, 'square', 0.1);
+            }
+            spawnParticles(ball.x*W, ball.y*H, "var(--neon)", 12, 12);
         }
     }
 
-    // Scoring & Targeted Reset
-    if(b.y < 0) { 
-        game.scores.p1++; 
-        resetBall(b, 'p2'); // Point to P1 -> Ball goes to P2
-        playSound(150, "sawtooth", 0.3); 
-    }
-    if(b.y > 1) { 
-        game.scores.p2++; 
-        resetBall(b, 'p1'); // Point to P2 -> Ball goes to P1
-        playSound(150, "sawtooth", 0.3); 
+    // Miss logic
+    if(ball.y > 1.0) {
+        updateScore(-2);
+        shake = 12;
+        playSound(150, 'sawtooth', 0.4);
+        resetBall();
     }
 
-    matchRef.update({ ball: b, scores: game.scores, speed: game.speed });
+    draw();
+    requestAnimationFrame(loop);
 }
 
-function resetBall(b, targetPlayer) {
-    hitCount = 0;
-    b.x = 0.5; b.y = 0.5;
-    b.size = 8;
-    game.speed = 1;
+function updateScore(val) {
+    myScore = myScore + val;
+    document.getElementById('my-s').innerText = myScore;
+    document.getElementById('my-energy').style.width = Math.min(100, Math.max(0, (myScore/50)*100)) + "%";
     
-    // Launch towards the player who just lost the point
-    b.dx = 0.005 * (Math.random() > 0.5 ? 1 : -1);
-    b.dy = (targetPlayer === 'p1') ? 0.005 : -0.005;
+    const updates = {};
+    updates[role + "S"] = myScore;
+
+    if(myScore > highScore) {
+        highScore = myScore;
+        localStorage.setItem('neonHighScore', highScore.toString());
+        document.getElementById('my-h').innerText = highScore;
+        updates[role + "H"] = highScore;
+    }
+
+    matchRef.update(updates);
+}
+
+function resetBall() {
+    ball = { x: 0.5, y: 0.2, dx: (Math.random()-0.5)*0.01, dy: 0.008 };
 }
 
 function draw() {
-    W = canvas.width = container.offsetWidth; H = canvas.height = container.offsetHeight;
-    ctx.clearRect(0,0,W,H);
+    ctx.save();
+    if(shake > 0) { ctx.translate((Math.random()-0.5)*shake, (Math.random()-0.5)*shake); shake *= 0.9; }
+    
+    ctx.fillStyle = "#050505";
+    ctx.fillRect(0,0,W,H);
+    
+    ctx.strokeStyle = "#111";
+    for(let i=0; i<W; i+=40) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,H); ctx.stroke(); }
 
-    // Ball
-    const isTurbo = (game.speed > 1 && (game.speed - 1) % 3 === 0);
-    ctx.fillStyle = isTurbo ? "#ff0055" : "#ccff00";
-    ctx.shadowBlur = isTurbo ? 35 : 20;
-    ctx.shadowColor = ctx.fillStyle;
-    ctx.beginPath(); ctx.arc(game.ball.x * W, game.ball.y * H, game.ball.size, 0, Math.PI*2); ctx.fill();
+    ctx.shadowBlur = wallFlash > 0 ? 20 : 0;
+    ctx.shadowColor = "var(--cyan)";
+    ctx.fillStyle = wallFlash > 0 ? "#fff" : "#1a1a1a";
+    ctx.fillRect(0,0,W,8); ctx.fillRect(0,0,8,H); ctx.fillRect(W-8,0,8,H);
+    if(wallFlash > 0) wallFlash--;
 
-    // Paddles
-    ctx.shadowBlur = 15;
-    ctx.fillStyle = "#fff"; ctx.shadowColor = "#fff";
-    ctx.fillRect(game.p1X * W - 50, H - 20, 100, 10); // Player 1 (Bottom)
-    ctx.fillRect(game.p2X * W - 50, 10, 100, 10);  // Player 2 (Top)
+    trail.forEach((p, i) => {
+        ctx.fillStyle = `hsla(180, 100%, 50%, ${i / trail.length * 0.5})`;
+        ctx.beginPath(); ctx.arc(p.x*W, p.y*H, (i/trail.length)*10, 0, Math.PI*2); ctx.fill();
+    });
 
-    requestAnimationFrame(draw);
+    particles.forEach((p, i) => {
+        p.x += p.vx; p.y += p.vy; p.life -= 0.03;
+        ctx.fillStyle = p.color; ctx.globalAlpha = p.life;
+        ctx.fillRect(p.x, p.y, 4, 4);
+    });
+    particles = particles.filter(p => p.life > 0);
+    ctx.globalAlpha = 1;
+
+    ctx.shadowBlur = 20; ctx.shadowColor = "var(--turbo)";
+    ctx.fillStyle = "#fff";
+    ctx.beginPath(); ctx.arc(ball.x*W, ball.y*H, 10, 0, Math.PI*2); ctx.fill();
+
+    let pW = Math.max(0.08, 0.2 - (myScore * 0.002)) * W;
+    ctx.shadowBlur = 20; ctx.shadowColor = "var(--neon)";
+    ctx.fillStyle = "var(--neon)";
+    ctx.fillRect(myPaddleX*W - pW/2, H * 0.85, pW, 12);
+    
+    announcements.forEach((a, i) => {
+        ctx.font = "bold 40px 'Segoe UI'";
+        ctx.fillStyle = a.color;
+        ctx.globalAlpha = a.opacity;
+        ctx.textAlign = "center";
+        ctx.fillText(a.txt, W/2, a.y);
+        a.y -= 1; a.opacity -= 0.02;
+    });
+    announcements = announcements.filter(a => a.opacity > 0);
+
+    ctx.restore();
+}
+
+function copyLink() {
+    const text = document.getElementById('link-box').innerText;
+    const btn = document.getElementById('copy-btn');
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(() => {
+            btn.innerText = "COPIED!";
+            setTimeout(() => btn.innerText = "COPY LINK", 2000);
+        }).catch(() => fallbackCopy(text, btn));
+    } else {
+        fallbackCopy(text, btn);
+    }
+}
+
+function fallbackCopy(text, btn) {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.position = "fixed";
+    textArea.style.left = "-9999px";
+    textArea.style.top = "0";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    textArea.setSelectionRange(0, 99999);
+    try {
+        const successful = document.execCommand('copy');
+        btn.innerText = successful ? "COPIED!" : "ERROR";
+    } catch (err) {
+        btn.innerText = "ERROR";
+    }
+    document.body.removeChild(textArea);
+    setTimeout(() => btn.innerText = "COPY LINK", 2000);
 }
 </script>
 </body>
