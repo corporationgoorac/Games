@@ -288,17 +288,15 @@ function loop() {
     if(!gameActive) return;
     frameCount++;
 
-    // Calculate dynamic difficulty speed
     let speedFactor = 1 + (Math.max(0, myScore) * 0.015);
-    
     let zigzag = (myScore > 25) ? Math.sin(frameCount * 0.1) * 0.002 : 0;
+    
     ball.x += (ball.dx * speedFactor) + zigzag;
     ball.y += (ball.dy * speedFactor);
     
     trail.push({x: ball.x, y: ball.y});
     if(trail.length > 15) trail.shift();
 
-    // Side walls
     if(ball.x < 0.03 || ball.x > 0.97) {
         ball.dx *= -1;
         ball.x = (ball.x < 0.03) ? 0.031 : 0.969;
@@ -306,7 +304,6 @@ function loop() {
         spawnParticles(ball.x*W, ball.y*H, "var(--cyan)");
         playSound(400, 'sine', 0.05);
     }
-    // Top wall
     if(ball.y < 0.03) {
         ball.dy *= -1;
         ball.y = 0.031;
@@ -314,32 +311,30 @@ function loop() {
         playSound(600, 'sine', 0.05);
     }
 
-    // Paddle hit logic
     let pW = Math.max(0.08, 0.2 - (myScore * 0.002));
-    let paddleY = 0.85; // Fixed height constant
+    let paddleY = 0.85;
     
-    if(ball.y >= paddleY && ball.y <= paddleY + 0.03) {
+    // Fixed: Detect collision only if ball is moving DOWNWARDS to prevent double hits
+    if(ball.dy > 0 && ball.y >= paddleY && ball.y <= paddleY + 0.05) {
         let diff = ball.x - myPaddleX;
         if(Math.abs(diff) < pW/2) {
-            // Collision detected
             ball.dy = -Math.abs(ball.dy); 
-            ball.y = paddleY - 0.01; // Push ball up to avoid multi-hits
-            ball.dx += (diff * 0.1) + (paddleVel * 0.4); // Add spin
+            ball.y = paddleY - 0.01; 
+            ball.dx += (diff * 0.1) + (paddleVel * 0.4); 
             
             if(Math.abs(diff) < 0.02) {
-                updateScore(2);
+                updateScore(2); // PERFECT BONUS
                 announce("PERFECT!", "var(--neon)");
                 shake = 10;
                 playSound(1200, 'square', 0.2, 0.15);
             } else {
-                updateScore(1);
+                updateScore(1); // REGULAR HIT
                 playSound(800, 'square', 0.1);
             }
             spawnParticles(ball.x*W, ball.y*H, "var(--neon)", 12, 12);
         }
     }
 
-    // Miss logic
     if(ball.y > 1.0) {
         updateScore(-2);
         shake = 12;
