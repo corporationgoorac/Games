@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Neon Pro | Auto-Tennis</title>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <style>
+        :root { --neon: #ccff00; --bg: #050505; }
+        * { touch-action: none; box-sizing: border-box; -webkit-user-select: none; }
+        body { background: var(--bg); color: #fff; margin: 0; overflow: hidden; height: 100vh; font-family: 'Arial Black', sans-serif; display: flex; flex-direction: column; }
+
+        /* HEADER UI */
+        #hud { padding: 30px; display: flex; justify-content: space-between; background: linear-gradient(180deg, rgba(204,255,0,0.1) 0%, transparent 100%); }
+        .p-info { display: flex; flex-direction: column; }
+        .name-lbl { font-size: 14px; color: var(--neon); letter-spacing: 3px; opacity: 0.8; }
+        .score-val { font-size: 80px; font-weight: 900; line-height: 0.8; text-shadow: 0 0 20px var(--neon); }
+
+        /* ARENA */
+        #court-wrap { position: relative; flex: 1; margin: 10px 20px 30px; border-left: 6px solid #222; border-right: 6px solid #222; border-radius: 10px; background: #080808; overflow: hidden; }
+        canvas { width: 100%; height: 100%; display: block; }
+
+        /* OVERLAYS */
+        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.98); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 20px; backdrop-filter: blur(10px); }
+        .modal { width: 100%; max-width: 400px; text-align: center; }
+        input { width: 100%; padding: 20px; background: #111; border: 2px solid var(--neon); color: #fff; border-radius: 15px; font-size: 20px; margin-bottom: 20px; text-align: center; }
+        .btn { width: 100%; padding: 20px; background: var(--neon); color: #000; border: none; border-radius: 15px; font-weight: 900; font-size: 18px; cursor: pointer; text-transform: uppercase; box-shadow: 0 0 20px rgba(204,255,0,0.4); }
+        
+        #announcer { position: absolute; top: 50%; width: 100%; text-align: center; font-size: 40px; color: #fff; font-weight: 900; pointer-events: none; opacity: 0; transition: 0.3s; z-index: 5; }
+        #announcer.show { opacity: 1; transform: scale(1.2); }
+    </style>
+</head>
+<body>
+
+<div id="hud">
+    <div class="p-info">
+        <div id="opp-n" class="name-lbl">SEARCHING...</div>
+        <div class="score-val" id="opp-s">0</div>
+    </div>
+    <div class="p-info" style="text-align:right">
+        <div id="my-n" class="name-lbl">YOU</div>
+        <div class="score-val" id="my-s">0</div>
+    </div>
+</div>
+
+<div id="court-wrap">
+    <canvas id="game"></canvas>
+    <div id="announcer">GO!</div>
+</div>
+
+<div id="step-1" class="overlay">
+    <div class="modal">
+        <h1 style="color:var(--neon); font-size: 45px; margin-bottom: 10px;">NEON PRO</h1>
+        <p style="color:#666; margin-bottom:30px;">FIRST TO 15 WINS</p>
+        <input type="text" id="name-in" placeholder="ENTER NAME" maxlength="10">
+        <button class="btn" onclick="connectPeer()">JOIN CIRCUIT</button>
+    </div>
+</div>
+
+<div id="step-2" class="overlay" style="display:none;">
+    <div class="modal">
+        <h2 style="color:var(--neon)">SEND INVITE</h2>
+        <input type="text" id="share-url" readonly style="font-size: 12px; border-style: dashed;">
+        <button class="btn" id="copy-btn">COPY LINK</button>
+    </div>
+</div>
+
+<div id="win-screen" class="overlay" style="display:none;">
+    <div class="modal">
+        <h1 id="winner-name" style="color:var(--neon); font-size: 50px;">WINNER!</h1>
+        <button class="btn" onclick="location.reload()">REMATCH</button>
+    </div>
+</div>
+
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+let W, H, isHost = false, conn = null, peer = null;
+let myName = "", oppName = "OPPONENT", myScore = 0, oppScore = 0;
+let gameActive = false, inAutoServe = true;
+let wallFlashL = 0, wallFlashR = 0;
+
+const ball = { x:0, y:0, dx:0, dy:0, r:12, speed: 6 };
+const bat = { w: 110, h: 18 };
+let myP = { x: 0, y: 0 }, oppP = { x: 0, y: 0 };
+
+// Sound Engine
+const audio = new (window.AudioContext || window.webkitAudioContext)();
+function playTone(freq, type, dur, vol=0.1) {
+    const o = audio.createOscillator(); const g = audio.createGain();
+    o.type = type; o.frequency.value = freq;
+    g.gain.setValueAtTime(vol, audio.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.01, audio.currentTime + dur);
+    o.connect(g); g.connect(audio.destination);
+    o.start(); o.stop(audio.currentTime + dur);
+}
+
+function resize() {
+    W = canvas.width = canvas.offsetWidth; H = canvas.height = canvas.offsetHeight;
+    myP.x = W/2 - bat.w/2; myP.y = H - 50;
+    oppP.x = W/2 - bat.w/2; oppP.y = 50;
+}
+window.onresize = resize; resize();
+
+function connectPeer() {
+    myName = document.getElementById('name-in').value.trim().toUpperCase() || "PLAYER";
+    document.getElementById('step-1').style.display = 'none';
+    peer = new Peer();
+    const joinId = new URLSearchParams(window.location.search).get('join');
+
+    peer.on('open', id => {
+        if(joinId) { conn = peer.connect(joinId); setup(); }
+        else {
+            isHost = true;
+            const url = window.location.origin + window.location.pathname + "?join=" + id;
+            document.getElementById('share-url').value = url;
+            document.getElementById('step-2').style.display = 'flex';
+            document.getElementById('copy-btn').onclick = () => {
+                document.getElementById('share-url').select();
+                document.execCommand('copy');
+                document.getElementById('copy-btn').innerText = "COPIED!";
+            };
+        }
+    });
+    peer.on('connection', c => { conn = c; setup(); });
+}
+
+function setup() {
+    conn.on('open', () => {
+        document.getElementById('step-2').style.display = 'none';
+        conn.send({ t: 'name', n: myName });
+        gameActive = true; 
+        if(isHost) startAutoServe(true);
+        loop();
+    });
+    conn.on('data', d => {
+        if(d.t === 'name') { oppName = d.n; document.getElementById('opp-n').innerText = d.n; }
+        if(d.t === 'm') { oppP.x = (1 - d.x) * W - bat.w; }
+        if(d.t === 's') {
+            ball.x = (1 - d.bx) * W; ball.y = (1 - d.by) * H;
+            myScore = d.s2; oppScore = d.s1;
+            if(d.hit) playTone(400, 'triangle', 0.15);
+            if(d.wall === 'L') wallFlashL = 20;
+            if(d.wall === 'R') wallFlashR = 20;
+            if(d.score) { playTone(150, 'sawtooth', 0.4); announce("POINT!"); }
+        }
+        if(d.t === 'win') endGame(d.n);
+    });
+}
+
+function announce(txt) {
+    const el = document.getElementById('announcer');
+    el.innerText = txt; el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 1000);
+}
+
+function startAutoServe(toMe) {
+    inAutoServe = true;
+    ball.dx = 0; ball.dy = 0;
+    ball.x = W/2; ball.y = H/2;
+    setTimeout(() => {
+        if(!gameActive) return;
+        ball.dy = toMe ? ball.speed : -ball.speed;
+        ball.dx = (Math.random() - 0.5) * 8;
+        inAutoServe = false;
+        playTone(600, 'sine', 0.2);
+    }, 1500);
+}
+
+window.addEventListener('pointermove', e => {
+    if(!gameActive) return;
+    const rect = canvas.getBoundingClientRect();
+    const tx = (e.clientX || (e.touches && e.touches[0].clientX)) - rect.left;
+    myP.x = Math.max(0, Math.min(W - bat.w, tx - bat.w/2));
+    if(conn) conn.send({ t: 'm', x: myP.x/W });
+});
+
+function endGame(n) {
+    gameActive = false;
+    document.getElementById('winner-name').innerText = n + " WINS!";
+    document.getElementById('win-screen').style.display = 'flex';
+    playTone(440, 'square', 0.6);
+}
+
+function loop() {
+    if(!gameActive) return;
+    let hit = false, score = false, wall = null;
+
+    if(isHost) {
+        if(!inAutoServe) {
+            ball.x += ball.dx; ball.y += ball.dy;
+            
+            // Wall Bouncing
+            if(ball.x < ball.r) { ball.dx *= -1; ball.x = ball.r; wall = 'L'; wallFlashL = 20; }
+            if(ball.x > W - ball.r) { ball.dx *= -1; ball.x = W-ball.r; wall = 'R'; wallFlashR = 20; }
+
+            // Paddle Collision My Side
+            if(ball.y > myP.y - ball.r && ball.y < myP.y + bat.h && ball.x > myP.x && ball.x < myP.x + bat.w) {
+                ball.dy = -ball.speed; ball.dx += (ball.x - (myP.x + bat.w/2)) * 0.25; hit = true;
+            }
+            // Paddle Collision Opponent Side
+            if(ball.y < oppP.y + bat.h + ball.r && ball.y > oppP.y && ball.x > oppP.x && ball.x < oppP.x + bat.w) {
+                ball.dy = ball.speed; ball.dx += (ball.x - (oppP.x + bat.w/2)) * 0.25; hit = true;
+            }
+
+            // Scoring
+            if(ball.y < -20) { 
+                myScore++; score = true; 
+                if(myScore >= 15) { endGame(myName); conn.send({t:'win', n:myName}); } 
+                else { startAutoServe(false); announce("POINT!"); }
+            }
+            if(ball.y > H + 20) { 
+                oppScore++; score = true; 
+                if(oppScore >= 15) { endGame(oppName); conn.send({t:'win', n:oppName}); } 
+                else { startAutoServe(true); announce("POINT!"); }
+            }
+        }
+        conn.send({ t: 's', bx: ball.x/W, by: ball.y/H, s1: myScore, s2: oppScore, hit, score, wall });
+    }
+
+    // DRAWING
+    ctx.fillStyle = "#080808"; ctx.fillRect(0,0,W,H);
+    
+    // Net & Lines
+    ctx.strokeStyle = "rgba(255,255,255,0.05)"; ctx.setLineDash([10,10]);
+    ctx.beginPath(); ctx.moveTo(0, H/2); ctx.lineTo(W, H/2); ctx.stroke();
+    
+    // Bouncy Walls Visual
+    ctx.setLineDash([]);
+    if(wallFlashL > 0) { ctx.fillStyle = `rgba(204,255,0,${wallFlashL/20})`; ctx.fillRect(0,0,10,H); wallFlashL--; }
+    if(wallFlashR > 0) { ctx.fillStyle = `rgba(204,255,0,${wallFlashR/20})`; ctx.fillRect(W-10,0,10,H); wallFlashR--; }
+
+    // Paddles
+    ctx.shadowBlur = 15; ctx.shadowColor = "#fff"; ctx.fillStyle = "#fff";
+    ctx.fillRect(myP.x, myP.y, bat.w, bat.h);
+    ctx.fillRect(oppP.x, oppP.y, bat.w, bat.h);
+
+    // Ball
+    ctx.shadowBlur = 20; ctx.shadowColor = varColor('--neon'); ctx.fillStyle = varColor('--neon');
+    ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI*2); ctx.fill();
+    ctx.shadowBlur = 0;
+
+    document.getElementById('my-s').innerText = myScore;
+    document.getElementById('opp-s').innerText = oppScore;
+    
+    requestAnimationFrame(loop);
+}
+
+function varColor(n) { return getComputedStyle(document.documentElement).getPropertyValue(n); }
+</script>
+</body>
+</html>
