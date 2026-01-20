@@ -313,6 +313,7 @@ function initSync() {
             document.getElementById('next-round-btn').style.display = 'block';
             document.getElementById('my-role').innerText = '?';
             document.getElementById('my-role').style.color = '#fff';
+            document.getElementById('sync-status').innerText = "";
         }
         
         if(d.lastEmoji && d.lastEmoji.ts > lastEmojiTs) {
@@ -324,12 +325,19 @@ function initSync() {
 
         if(d.status === 'RESULTS') {
             showSummary(d.assignments, d.lastGain, d.guessData, d);
-            if (d[role + 'Ready'] && !d[ (role === 'p1' ? 'p2' : 'p1') + 'Ready' ]) {
+            const partnerKey = (role === 'p1' ? 'p2Ready' : 'p1Ready');
+            const myKey = (role === 'p1' ? 'p1Ready' : 'p2Ready');
+            
+            if (d[myKey] && !d[partnerKey]) {
                 document.getElementById('sync-status').innerText = "WAITING FOR PARTNER...";
                 document.getElementById('next-round-btn').style.display = 'none';
             }
+            
+            // Critical Fix: Only P1 triggers the next round when both are ready
             if(d.p1Ready && d.p2Ready && role === 'p1') {
-                setTimeout(() => startNewRound(currentRound + 1), 1500);
+                // Clear flags immediately to prevent double trigger
+                matchRef.update({ p1Ready: false, p2Ready: false });
+                setTimeout(() => startNewRound(currentRound + 1), 1000);
             }
         }
     });
@@ -481,7 +489,8 @@ function startNewRound(r) {
 
 function markPlayerReady() { 
     playSound('correct');
-    let up = {}; up[role + 'Ready'] = true; matchRef.update(up); 
+    let up = {}; up[role + 'Ready'] = true; 
+    matchRef.update(up); 
     document.getElementById('sync-status').innerText = "WAITING FOR PARTNER...";
     document.getElementById('next-round-btn').style.display = 'none';
 }
