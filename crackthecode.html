@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Lunar Decryption | 🌙</title>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <style>
+        :root { 
+            --moon-white: #e0e0e0;
+            --moon-glow: #f0f0f0;
+            --space-bg: #05070a;
+            --midnight: #0f172a;
+            --lunar-surface: rgba(30, 41, 59, 0.7);
+            --accent-blue: #38bdf8;
+            --danger-red: #f43f5e;
+            --glass: rgba(255, 255, 255, 0.05);
+            --border: rgba(255, 255, 255, 0.15);
+        }
+
+        * { box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
+        
+        body { 
+            background: var(--space-bg); 
+            background-image: 
+                radial-gradient(circle at 50% -20%, #1e293b 0%, #05070a 80%),
+                url('https://www.transparenttextures.com/patterns/stardust.png');
+            color: var(--moon-white); 
+            margin: 0; 
+            display: flex; 
+            flex-direction: column; 
+            height: 100vh; 
+            height: -webkit-fill-available;
+            overflow: hidden; 
+        }
+
+        #header { 
+            padding: 12px 15px; 
+            border-bottom: 1px solid var(--border); 
+            display: flex; 
+            justify-content: space-between; 
+            background: rgba(15, 23, 42, 0.9); 
+            backdrop-filter: blur(10px);
+            align-items: center;
+            z-index: 10;
+            flex-shrink: 0;
+        }
+
+        .user-tag { font-size: 8px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1.5px; }
+        .user-name { font-size: 14px; font-weight: 600; color: var(--moon-glow); }
+        .opp-name { color: var(--danger-red); }
+
+        #turn-indicator { 
+            font-size: 10px; 
+            padding: 4px 12px; 
+            border-radius: 50px; 
+            background: var(--glass); 
+            border: 1px solid var(--border);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: bold;
+        }
+
+        #my-code-display {
+            position: absolute;
+            top: 65px;
+            right: 15px;
+            font-size: 10px;
+            background: rgba(56, 189, 248, 0.1);
+            padding: 5px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--accent-blue);
+            color: var(--accent-blue);
+            z-index: 20;
+            display: none;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(56, 189, 248, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0); }
+        }
+
+        #main-container { 
+            flex-grow: 1; 
+            display: flex; 
+            flex-direction: column; 
+            padding: 10px;
+            overflow: hidden;
+        }
+
+        #terminal { 
+            width: 100%; 
+            background: var(--lunar-surface); 
+            border: 1px solid var(--border); 
+            border-radius: 20px; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: space-between; /* Pushes content apart */
+            height: 100%; 
+            backdrop-filter: blur(15px);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5), inset 0 0 20px rgba(255,255,255,0.02);
+            position: relative;
+            overflow: hidden;
+        }
+
+        #terminal::after {
+            content: "🌙";
+            position: absolute;
+            top: 10px; right: 15px;
+            opacity: 0.1; font-size: 40px;
+            pointer-events: none;
+        }
+        
+        #log { 
+            flex-grow: 1; 
+            padding: 15px; 
+            overflow-y: auto; 
+            font-size: 13px; 
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        #log div { 
+            padding: 10px 15px; 
+            border-radius: 15px; 
+            max-width: 85%;
+            animation: slideUp 0.3s ease-out;
+            line-height: 1.4;
+        }
+
+        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .log-me { align-self: flex-end; background: var(--midnight); border: 1px solid var(--accent-blue); color: var(--accent-blue); border-bottom-right-radius: 2px; }
+        .log-them { align-self: flex-start; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-bottom-left-radius: 2px; }
+        
+        #input-zone { 
+            padding: 15px; 
+            background: rgba(0,0,0,0.4); 
+            border-top: 1px solid var(--border); 
+            flex-shrink: 0;
+            width: 100%;
+        }
+
+        .input-group { display: flex; gap: 10px; }
+
+        input { 
+            background: var(--midnight); 
+            border: 1px solid var(--border); 
+            color: #fff; 
+            padding: 12px; 
+            border-radius: 12px; 
+            font-size: 18px; 
+            text-align: center; 
+            outline: none; 
+            flex-grow: 1; 
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);
+        }
+
+        .btn-main { 
+            background: var(--moon-white); 
+            color: #000; 
+            padding: 0 20px; 
+            border-radius: 12px; 
+            font-weight: bold; 
+            border: none; 
+            cursor: pointer; 
+            transition: 0.2s;
+        }
+
+        .btn-main:disabled { background: #334155; color: #64748b; cursor: not-allowed; }
+
+        .overlay { 
+            position: fixed; inset: 0; 
+            background: var(--space-bg); 
+            display: flex; justify-content: center; align-items: center; 
+            z-index: 100; 
+            padding: 20px;
+        }
+
+        .modal { 
+            width: 100%; 
+            max-width: 350px; 
+            text-align: center; 
+            padding: 30px; 
+            border-radius: 24px; 
+            border: 1px solid var(--border); 
+            background: var(--midnight); 
+            box-shadow: 0 0 50px rgba(56, 189, 248, 0.1);
+        }
+
+        .modal h2 { margin: 0 0 20px; font-size: 20px; color: var(--accent-blue); letter-spacing: 1px; }
+
+        .large-in { width: 100%; margin-bottom: 20px; font-size: 18px; padding: 15px; }
+
+        #link-display { 
+            background: rgba(0,0,0,0.4); 
+            padding: 12px; 
+            border-radius: 10px; 
+            font-size: 10px; 
+            color: var(--accent-blue); 
+            word-break: break-all; 
+            margin: 15px 0; 
+            border: 1px dashed #444;
+        }
+    </style>
+</head>
+<body>
+
+<div id="header">
+    <div>
+        <div class="user-tag">Enemy</div>
+        <div id="opp-display" class="user-name opp-name">SCANNING...</div>
+    </div>
+    <div id="turn-indicator">OFFLINE</div>
+    <div style="text-align: right;">
+        <div class="user-tag">You</div>
+        <div id="my-display" class="user-name">...</div>
+    </div>
+</div>
+
+<div id="my-code-display">My Code: <span id="my-code-val">---</span></div>
+
+<div id="main-container">
+    <div id="terminal">
+        <div id="log">/system/lunar: Link established.</div>
+        <div id="input-zone">
+            <div class="input-group">
+                <input type="number" id="guess-in" inputmode="numeric" placeholder="???" oninput="if(this.value.length > 3) this.value = this.value.slice(0, 3);">
+                <button id="fire-btn" class="btn-main" onclick="submitGuess()" disabled>GO</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="step-name" class="overlay">
+    <div class="modal">
+        <div style="font-size: 40px; margin-bottom: 10px;">🌙</div>
+        <h2>Enter Name</h2>
+        <input type="text" id="name-input" class="large-in" placeholder="Your Name">
+        <button class="btn-main" style="width:100%; height: 55px;" onclick="saveName()">Begin Mission</button>
+    </div>
+</div>
+
+<div id="step-share" class="overlay" style="display:none">
+    <div class="modal">
+        <h2>Target Link</h2>
+        <p style="color:#94a3b8; font-size: 12px;">Share this frequency with your enemy:</p>
+        <div id="link-display">...</div>
+        <button class="btn-main" style="width:100%; height: 55px;" onclick="copyInvite(this)">Copy Frequency</button>
+    </div>
+</div>
+
+<div id="step-secret" class="overlay" style="display:none">
+    <div class="modal">
+        <h2>Set Firewall</h2>
+        <p style="color:#94a3b8; font-size: 12px;">Enter 3 digits for the enemy to guess:</p>
+        <input type="number" id="secret-input" inputmode="numeric" class="large-in" placeholder="000" oninput="if(this.value.length > 3) this.value = this.value.slice(0, 3);">
+        <button class="btn-main" style="width:100%; height: 55px;" onclick="saveSecret()">Lock Code</button>
+    </div>
+</div>
+
+<div id="step-win" class="overlay" style="display:none">
+    <div class="modal">
+        <h1 id="win-status" style="font-size: 24px;">OVER</h1>
+        <p id="win-detail" style="font-size: 14px; color: #94a3b8;"></p>
+        <button id="rematch-btn" class="btn-main" style="width:100%; height: 55px; margin-top: 20px;" onclick="requestRematch()">Request Rematch</button>
+        <button class="btn-main" style="width:100%; height: 45px; margin-top: 10px; background: transparent; color: #64748b; border: 1px solid var(--border);" onclick="location.reload()">New Session</button>
+    </div>
+</div>
+
+<script>
+const firebaseConfig = {
+    apiKey: "AIzaSyCkpSNJP6-puaQsB9H5ZX_pp9alrbR58lI",
+    authDomain: "pinga-8bba9.firebaseapp.com",
+    databaseURL: "https://pinga-8bba9-default-rtdb.firebaseio.com",
+    projectId: "pinga-8bba9",
+    storageBucket: "pinga-8bba9.firebasestorage.app",
+    messagingSenderId: "751196556015",
+    appId: "1:751196556015:web:504f02ccc79778c41da91a"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+let role, matchRef, mySecret = "", oppSecret = "", currentTurn = 'p1', myName = "";
+let lastLogTs = 0;
+
+window.onload = function() {
+    const savedName = localStorage.getItem('decryption_codename');
+    if (savedName) {
+        document.getElementById('name-input').value = savedName;
+    }
+};
+
+function saveName() {
+    myName = document.getElementById('name-input').value || "User";
+    localStorage.setItem('decryption_codename', myName);
+
+    if (myName.toLowerCase().includes("sumaiya")) myName = "Sumaiya 🖤💎";
+    document.getElementById('my-display').innerText = myName;
+    document.getElementById('step-name').style.display = 'none';
+
+    const mId = new URLSearchParams(window.location.search).get('m');
+    if(mId) {
+        role = 'p2';
+        matchRef = db.ref("decryption/" + mId);
+        matchRef.update({ p2N: myName });
+        document.getElementById('step-secret').style.display = 'flex';
+    } else {
+        role = 'p1';
+        const newId = Math.random().toString(36).substring(2, 7);
+        matchRef = db.ref("decryption/" + newId);
+        document.getElementById('link-display').innerText = window.location.origin + window.location.pathname + "?m=" + newId;
+        document.getElementById('step-share').style.display = 'flex';
+        matchRef.set({ p1N: myName, p2N: "Scanning...", turn: 'p1', rematchP1: false, rematchP2: false });
+    }
+    initSync();
+}
+
+function saveSecret() {
+    const val = document.getElementById('secret-input').value;
+    if(val.length !== 3) return alert("3 digits required.");
+    mySecret = val;
+    
+    document.getElementById('my-code-val').innerText = mySecret;
+    document.getElementById('my-code-display').style.display = 'block';
+
+    let up = {}; up[role + "Code"] = val;
+    matchRef.update(up);
+    document.getElementById('step-secret').style.display = 'none';
+}
+
+function initSync() {
+    matchRef.on('value', snap => {
+        const d = snap.val(); if(!d) return;
+        
+        oppSecret = (role === 'p1') ? d.p2Code : d.p1Code;
+        document.getElementById('opp-display').innerText = (role === 'p1') ? d.p2N : d.p1N;
+        
+        if(currentTurn !== d.turn && d.turn === role) {
+            if ("vibrate" in navigator) navigator.vibrate([100, 50, 100]);
+        }
+        
+        currentTurn = d.turn;
+
+        if(role === 'p1' && d.p2N !== "Scanning..." && !mySecret) {
+            document.getElementById('step-share').style.display = 'none';
+            document.getElementById('step-secret').style.display = 'flex';
+        }
+
+        const indicator = document.getElementById('turn-indicator');
+        const btn = document.getElementById('fire-btn');
+        if(currentTurn === role) {
+            indicator.innerText = "YOUR TURN";
+            indicator.style.color = "var(--accent-blue)";
+            indicator.style.borderColor = "var(--accent-blue)";
+            btn.disabled = false; btn.innerText = "GO";
+        } else {
+            indicator.innerText = "WAITING";
+            indicator.style.color = "#94a3b8";
+            indicator.style.borderColor = "var(--border)";
+            btn.disabled = true; btn.innerText = "•••";
+        }
+
+        if(d.lastGuess) {
+            updateLogDisplay(d.lastGuess);
+        }
+
+        const oppRematch = (role === 'p1') ? d.rematchP2 : d.rematchP1;
+        const myRematch = (role === 'p1') ? d.rematchP1 : d.rematchP2;
+        
+        if(d.winner) {
+            document.getElementById('step-win').style.display = 'flex';
+            document.getElementById('win-status').innerText = d.winner === role ? "MISSION SUCCESS" : "MISSION FAILURE";
+            document.getElementById('win-status').style.color = d.winner === role ? "var(--accent-blue)" : "var(--danger-red)";
+            document.getElementById('win-detail').innerText = d.winner === role ? "Enemy code cracked. Lunar surface secure." : "Your firewall was breached by the enemy.";
+            
+            const rBtn = document.getElementById('rematch-btn');
+            if(oppRematch && !myRematch) {
+                rBtn.innerText = "Opponent wants rematch!";
+                rBtn.style.background = "var(--accent-blue)";
+            } else if (myRematch && !oppRematch) {
+                rBtn.innerText = "Waiting for Opponent...";
+                rBtn.disabled = true;
+            }
+        }
+
+        if(d.rematchP1 && d.rematchP2) {
+            resetGame();
+        }
+    });
+}
+
+function requestRematch() {
+    let up = {}; 
+    up[role === 'p1' ? 'rematchP1' : 'rematchP2'] = true;
+    matchRef.update(up);
+}
+
+function resetGame() {
+    mySecret = "";
+    oppSecret = "";
+    lastLogTs = 0;
+    document.getElementById('log').innerHTML = "/system/lunar: Link established. Rematch initiated.";
+    document.getElementById('my-code-display').style.display = 'none';
+    document.getElementById('step-win').style.display = 'none';
+    document.getElementById('rematch-btn').innerText = "Request Rematch";
+    document.getElementById('rematch-btn').disabled = false;
+    document.getElementById('rematch-btn').style.background = "";
+    document.getElementById('step-secret').style.display = 'flex';
+    document.getElementById('secret-input').value = "";
+    
+    if(role === 'p1') {
+        matchRef.update({
+            p1Code: null,
+            p2Code: null,
+            winner: null,
+            lastGuess: null,
+            turn: 'p1',
+            rematchP1: false,
+            rematchP2: false
+        });
+    }
+}
+
+function submitGuess() {
+    const guess = document.getElementById('guess-in').value;
+    if(guess.length !== 3 || !oppSecret) return;
+
+    let pos = 0, correctNum = 0;
+    let sArr = oppSecret.split("");
+    let gArr = guess.split("");
+
+    for(let i=0; i<3; i++) {
+        if(gArr[i] === sArr[i]) { pos++; sArr[i] = null; gArr[i] = "X"; }
+    }
+    for(let i=0; i<3; i++) {
+        if(gArr[i] !== "X" && sArr.includes(gArr[i])) { correctNum++; sArr[sArr.indexOf(gArr[i])] = null; }
+    }
+
+    const resultStr = `${correctNum + pos} Correct | ${pos} Position`;
+    const nextTurn = role === 'p1' ? 'p2' : 'p1';
+
+    let updates = {
+        turn: nextTurn,
+        lastGuess: {
+            by: role,
+            name: myName,
+            val: guess,
+            res: resultStr,
+            ts: Date.now()
+        }
+    };
+
+    if(pos === 3) updates.winner = role;
+    matchRef.update(updates);
+    document.getElementById('guess-in').value = "";
+}
+
+function updateLogDisplay(g) {
+    if(g.ts <= lastLogTs) return;
+    lastLogTs = g.ts;
+    const log = document.getElementById('log');
+    const div = document.createElement('div');
+    div.className = g.by === role ? 'log-me' : 'log-them';
+    div.innerHTML = `<strong>${g.val}</strong><br><span style="font-size:11px;">${g.res}</span>`;
+    log.appendChild(div);
+    log.scrollTop = log.scrollHeight;
+}
+
+function copyInvite(btn) {
+    const el = document.createElement('textarea');
+    el.value = document.getElementById('link-display').innerText;
+    document.body.appendChild(el); el.select();
+    document.execCommand('copy'); document.body.removeChild(el);
+    btn.innerText = "COPIED!";
+    setTimeout(() => btn.innerText = "Copy Frequency", 2000);
+}
+</script>
+</body>
+</html>
