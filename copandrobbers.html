@@ -311,6 +311,8 @@ function initSync() {
             unlockGuessing(false);
             document.getElementById('overlay-summary').style.display = 'none';
             document.getElementById('next-round-btn').style.display = 'block';
+            document.getElementById('my-role').innerText = '?';
+            document.getElementById('my-role').style.color = '#fff';
         }
         
         if(d.lastEmoji && d.lastEmoji.ts > lastEmojiTs) {
@@ -390,7 +392,11 @@ function updateLeaderboard() {
     const lb = document.getElementById('leaderboard');
     lb.innerHTML = '';
     sorted.forEach(([id, val], i) => {
-        const n = id==='p1'?"YOU": (id==='p2'?document.getElementById('p2-name-label').innerText:id.toUpperCase());
+        let n = "BOT";
+        if(id === 'p1') n = "YOU";
+        else if(id === 'p2') n = document.getElementById('p2-name-label').innerText;
+        else if(id === 'bot1') n = "ALPHA";
+        else if(id === 'bot2') n = "ZETA";
         lb.innerHTML += `<div class="rank-item ${i===0?'rank-first':''}"><div>${n}</div><div>${val}</div></div>`;
     });
 }
@@ -410,17 +416,23 @@ function unlockGuessing(unlock) {
 function policeGuess(targetId, actingPoliceId = null) {
     matchRef.get().then(snap => {
         const d = snap.val();
-        const activePolice = actingPoliceId || role;
-        if(d.assignments[activePolice] !== 'Police' || d.status === 'RESULTS') return;
+        const activePoliceKey = actingPoliceId || role;
+        if(d.assignments[activePoliceKey] !== 'Police' || d.status === 'RESULTS') return;
+        
         const thiefId = Object.keys(d.assignments).find(k => d.assignments[k] === 'Thief');
         let newScores = {...d.scores}, gain = { p1:0, p2:0, bot1:0, bot2:0 };
-        let pName = actingPoliceId ? (actingPoliceId==='bot1'?'ALPHA':'ZETA') : "YOU";
-        let tName = (targetId === 'p1' ? "YOU" : (targetId === 'p2' ? document.getElementById('p2-name-label').innerText : (targetId==='bot1'?'ALPHA':'ZETA')));
+        
+        let pName = activePoliceKey === 'p1' ? "YOU" : (activePoliceKey === 'p2' ? d.p2N : (activePoliceKey === 'bot1' ? 'ALPHA' : 'ZETA'));
+        let tName = targetId === 'p1' ? "YOU" : (targetId === 'p2' ? d.p2N : (targetId === 'bot1' ? 'ALPHA' : 'ZETA'));
+        
         let correct = (targetId === thiefId);
-        if(correct) gain[activePolice] = 1500; else gain[thiefId] = 1500;
+        if(correct) gain[activePoliceKey] = 1500; else gain[thiefId] = 1500;
+        
         gain[Object.keys(d.assignments).find(k => d.assignments[k]==='King')] = 1000;
         gain[Object.keys(d.assignments).find(k => d.assignments[k]==='Minister')] = 800;
+        
         for(let p in gain) newScores[p] += gain[p];
+        
         matchRef.update({ 
             scores: newScores, lastGain: gain, status: 'RESULTS',
             guessData: { police: pName, target: tName, correct: correct },
@@ -432,12 +444,24 @@ function policeGuess(targetId, actingPoliceId = null) {
 function showSummary(assigns, gains, gData) {
     const content = document.getElementById('summary-content');
     content.innerHTML = `<div style="padding:15px; background:rgba(255,255,255,0.05); border-radius:15px; margin-bottom:15px;">
-        <span style="color:var(--police)">${gData.police}</span> targetted <span style="color:var(--thief)">${gData.target}</span><br>
+        <span style="color:var(--police)">${gData.police}</span> targeted <span style="color:var(--thief)">${gData.target}</span><br>
         <b>RESULT:</b> ${gData.correct ? 'HUNT SUCCESSFUL 🎯' : 'HUNT FAILED ❌'}</div>`;
+    
     for(let p in assigns) {
-        let n = (p === 'p1') ? "YOU" : (p === 'p2' ? document.getElementById('p2-name-label').innerText : (p==='bot1'?'ALPHA':'ZETA'));
+        let n = "BOT";
+        if(p === 'p1') n = "YOU";
+        else if(p === 'p2') n = document.getElementById('p2-name-label').innerText;
+        else if(p === 'bot1') n = "ALPHA";
+        else if(p === 'bot2') n = "ZETA";
+        
+        let roleColor = '#fff';
+        if(assigns[p] === 'Police') roleColor = 'var(--police)';
+        else if(assigns[p] === 'Thief') roleColor = 'var(--thief)';
+        else if(assigns[p] === 'King') roleColor = 'var(--king)';
+        else if(assigns[p] === 'Minister') roleColor = 'var(--minister)';
+
         content.innerHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-            <span>${n}: <b>${assigns[p]}</b></span> <span style="color:var(--accent)">+${gains[p]}</span></div>`;
+            <span>${n}: <b style="color:${roleColor}">${assigns[p]}</b></span> <span style="color:var(--accent)">+${gains[p]}</span></div>`;
     }
     document.getElementById('overlay-summary').style.display = 'flex';
 }
@@ -458,6 +482,8 @@ function startNewRound(r) {
 function markPlayerReady() { 
     playSound('correct');
     let up = {}; up[role + 'Ready'] = true; matchRef.update(up); 
+    document.getElementById('sync-status').innerText = "WAITING FOR PARTNER...";
+    document.getElementById('next-round-btn').style.display = 'none';
 }
 
 function copyInvite() {
