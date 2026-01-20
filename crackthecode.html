@@ -2,278 +2,313 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Lunar Decryption | 🌙</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Lunar Decryption 🌙</title>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <style>
         :root { 
-            --moon-white: #e0e0e0;
-            --moon-glow: #f0f0f0;
-            --space-bg: #05070a;
-            --midnight: #0f172a;
-            --lunar-surface: rgba(30, 41, 59, 0.7);
-            --accent-blue: #38bdf8;
-            --danger-red: #f43f5e;
-            --glass: rgba(255, 255, 255, 0.05);
+            --moon-light: #ffffff;
+            --moon-glow: #000000;
+            --void: #000000;
+            --crater: #1a1a1a;
+            --lunar-glass: rgba(0, 0, 0, 0.8);
+            --accent-neon: #ffffff;
+            --danger: #fb7185;
             --border: rgba(255, 255, 255, 0.15);
         }
 
-        * { box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
+        * { 
+            box-sizing: border-box; 
+            font-family: 'Space Grotesk', sans-serif; 
+            -webkit-tap-highlight-color: transparent; 
+        }
         
         body { 
-            background: var(--space-bg); 
+            background: var(--void); 
             background-image: 
-                radial-gradient(circle at 50% -20%, #1e293b 0%, #05070a 80%),
+                radial-gradient(circle at 50% 10%, #111 0%, #000 70%),
                 url('https://www.transparenttextures.com/patterns/stardust.png');
-            color: var(--moon-white); 
+            color: var(--moon-light); 
             margin: 0; 
             display: flex; 
             flex-direction: column; 
             height: 100vh; 
-            height: -webkit-fill-available;
+            height: 100dvh;
             overflow: hidden; 
         }
 
+        /* --- HEADER --- */
         #header { 
-            padding: 12px 15px; 
+            padding: 16px 20px; 
             border-bottom: 1px solid var(--border); 
             display: flex; 
             justify-content: space-between; 
-            background: rgba(15, 23, 42, 0.9); 
-            backdrop-filter: blur(10px);
+            background: #000; 
+            backdrop-filter: blur(20px);
             align-items: center;
-            z-index: 10;
-            flex-shrink: 0;
+            z-index: 100;
         }
 
-        .user-tag { font-size: 8px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1.5px; }
-        .user-name { font-size: 14px; font-weight: 600; color: var(--moon-glow); }
-        .opp-name { color: var(--danger-red); }
+        .u-info { display: flex; flex-direction: column; }
+        .u-tag { font-size: 8px; color: #888; text-transform: uppercase; letter-spacing: 3px; font-weight: 700; }
+        .u-name { font-size: 16px; font-weight: 500; color: #fff; }
+        .opp-name { color: var(--danger); }
 
-        #turn-indicator { 
-            font-size: 10px; 
+        #turn-status { 
+            font-size: 11px; 
             padding: 4px 12px; 
-            border-radius: 50px; 
-            background: var(--glass); 
-            border: 1px solid var(--border);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            font-weight: bold;
-        }
-
-        #my-code-display {
-            position: absolute;
-            top: 65px;
-            right: 15px;
-            font-size: 10px;
-            background: rgba(56, 189, 248, 0.1);
-            padding: 5px 12px;
-            border-radius: 8px;
-            border: 1px solid var(--accent-blue);
-            color: var(--accent-blue);
-            z-index: 20;
-            display: none;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.4); }
-            70% { box-shadow: 0 0 0 10px rgba(56, 189, 248, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0); }
-        }
-
-        #main-container { 
-            flex-grow: 1; 
-            display: flex; 
-            flex-direction: column; 
-            padding: 10px;
-            overflow: hidden;
-        }
-
-        #terminal { 
-            width: 100%; 
-            background: var(--lunar-surface); 
-            border: 1px solid var(--border); 
             border-radius: 20px; 
+            background: #222; 
+            border: 1px solid var(--border);
+            letter-spacing: 1px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        /* --- GAME AREA --- */
+        #main-wrapper { 
+            flex: 1; 
             display: flex; 
             flex-direction: column; 
-            justify-content: space-between; /* Pushes content apart */
-            height: 100%; 
-            backdrop-filter: blur(15px);
-            box-shadow: 0 10px 40px rgba(0,0,0,0.5), inset 0 0 20px rgba(255,255,255,0.02);
+            padding: 12px;
+            gap: 12px;
+            overflow: hidden;
             position: relative;
+        }
+
+        #my-code-pill {
+            align-self: flex-end;
+            font-size: 12px;
+            background: #111;
+            padding: 6px 16px;
+            border-radius: 12px;
+            border: 1px solid #fff;
+            color: #fff;
+            display: none;
+        }
+
+        #terminal-box { 
+            flex: 1;
+            background: var(--lunar-glass); 
+            border: 1px solid var(--border); 
+            border-radius: 24px; 
+            display: flex; 
+            flex-direction: column; 
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 1);
             overflow: hidden;
         }
-
-        #terminal::after {
-            content: "🌙";
-            position: absolute;
-            top: 10px; right: 15px;
-            opacity: 0.1; font-size: 40px;
-            pointer-events: none;
-        }
         
-        #log { 
-            flex-grow: 1; 
-            padding: 15px; 
+        #log-flow { 
+            flex: 1;
+            padding: 20px; 
             overflow-y: auto; 
-            font-size: 13px; 
-            display: flex;
+            display: flex; 
             flex-direction: column;
-            gap: 10px;
-            -webkit-overflow-scrolling: touch;
+            gap: 15px;
+            background: #000;
         }
 
-        #log div { 
-            padding: 10px 15px; 
-            border-radius: 15px; 
+        #log-flow div { 
+            padding: 12px 16px; 
+            border-radius: 20px; 
             max-width: 85%;
-            animation: slideUp 0.3s ease-out;
+            font-size: 13px; /* Reduced base font size */
             line-height: 1.4;
+            position: relative;
+            border: 1px solid var(--border);
         }
 
-        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        .log-me { align-self: flex-end; background: var(--midnight); border: 1px solid var(--accent-blue); color: var(--accent-blue); border-bottom-right-radius: 2px; }
-        .log-them { align-self: flex-start; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-bottom-left-radius: 2px; }
-        
-        #input-zone { 
-            padding: 15px; 
-            background: rgba(0,0,0,0.4); 
-            border-top: 1px solid var(--border); 
-            flex-shrink: 0;
-            width: 100%;
-        }
-
-        .input-group { display: flex; gap: 10px; }
-
-        input { 
-            background: var(--midnight); 
-            border: 1px solid var(--border); 
+        /* CHANGED: White Text on Black Background for Log Bubbles */
+        .m-me { 
+            align-self: flex-end; 
+            background: #000; 
             color: #fff; 
-            padding: 12px; 
-            border-radius: 12px; 
-            font-size: 18px; 
+            border-bottom-right-radius: 4px;
+            box-shadow: 0 4px 15px rgba(255, 255, 255, 0.05);
+        }
+
+        .m-them { 
+            align-self: flex-start; 
+            background: #111; 
+            border: 1px solid var(--border);
+            border-bottom-left-radius: 4px; 
+            color: #fff;
+        }
+
+        /* Enlarge Guess Result Font (Keeping this big as requested) */
+        #log-flow div strong {
+            display: block;
+            font-size: 20px; /* Reduced slightly from 24px but still big */
+            margin-top: 4px;
+            letter-spacing: 1px;
+        }
+
+        /* --- INPUT ZONE FIXED --- */
+        #control-panel { 
+            padding: 15px 20px; 
+            background: #000; 
+            border-top: 1px solid var(--border);
+            padding-bottom: calc(20px + env(safe-area-inset-bottom));
+        }
+
+        .input-row { 
+            display: flex; 
+            gap: 10px; 
+            width: 100%;
+            align-items: center;
+        }
+
+        input#guess-in { 
+            background: #111; 
+            border: 2px solid #333; 
+            color: #fff; 
+            padding: 15px; 
+            border-radius: 16px; 
+            font-size: 24px; 
             text-align: center; 
             outline: none; 
-            flex-grow: 1; 
-            box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);
+            flex: 1; 
+            min-width: 0; 
+            font-family: 'JetBrains Mono', monospace;
+            transition: 0.3s;
         }
 
-        .btn-main { 
-            background: var(--moon-white); 
+        input:focus { border-color: #fff; box-shadow: 0 0 15px rgba(255, 255, 255, 0.1); }
+
+        .btn-fire { 
+            background: #fff; 
             color: #000; 
-            padding: 0 20px; 
-            border-radius: 12px; 
-            font-weight: bold; 
+            height: 60px;
+            padding: 0 30px; 
+            border-radius: 16px; 
+            font-weight: 900; 
             border: none; 
-            cursor: pointer; 
+            cursor: pointer;
             transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        .btn-main:disabled { background: #334155; color: #64748b; cursor: not-allowed; }
+        .btn-fire:active { transform: scale(0.95); }
+        .btn-fire:disabled { background: #222; color: #444; border: 1px solid #333; }
 
-        .overlay { 
+        /* --- OVERLAYS --- */
+        .full-overlay { 
             position: fixed; inset: 0; 
-            background: var(--space-bg); 
+            background: #000; 
             display: flex; justify-content: center; align-items: center; 
-            z-index: 100; 
-            padding: 20px;
+            z-index: 1000; padding: 20px;
+            backdrop-filter: blur(10px);
         }
-
-        .modal { 
-            width: 100%; 
-            max-width: 350px; 
-            text-align: center; 
-            padding: 30px; 
-            border-radius: 24px; 
+        
+        .lunar-card { 
+            width: 100%; max-width: 400px; 
+            padding: 40px 30px; 
+            border-radius: 35px; 
             border: 1px solid var(--border); 
-            background: var(--midnight); 
-            box-shadow: 0 0 50px rgba(56, 189, 248, 0.1);
+            background: #0a0a0a; 
+            text-align: center;
+            box-shadow: 0 0 40px rgba(0,0,0,1);
         }
 
-        .modal h2 { margin: 0 0 20px; font-size: 20px; color: var(--accent-blue); letter-spacing: 1px; }
-
-        .large-in { width: 100%; margin-bottom: 20px; font-size: 18px; padding: 15px; }
-
-        #link-display { 
-            background: rgba(0,0,0,0.4); 
-            padding: 12px; 
-            border-radius: 10px; 
-            font-size: 10px; 
-            color: var(--accent-blue); 
-            word-break: break-all; 
-            margin: 15px 0; 
-            border: 1px dashed #444;
+        .big-input { 
+            width: 100%; margin: 25px 0; 
+            font-size: 22px; padding: 18px; 
+            border-radius: 18px; 
+            border: 1px solid #333; 
+            background: #000; 
+            color: white; 
+            text-align: center; 
         }
+
+        .link-box { 
+            background: #000; padding: 16px; 
+            border-radius: 15px; font-size: 12px; 
+            color: #fff; 
+            word-break: break-all; margin: 20px 0; 
+            border: 1px dashed #fff; 
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        h2 { font-size: 26px; font-weight: 700; margin: 0; color: #fff; }
+        
+        .moon-icon { font-size: 50px; margin-bottom: 20px; filter: grayscale(1); animation: float 3s ease-in-out infinite; }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
     </style>
 </head>
 <body>
 
 <div id="header">
-    <div>
-        <div class="user-tag">Enemy</div>
-        <div id="opp-display" class="user-name opp-name">SCANNING...</div>
+    <div class="u-info">
+        <div class="u-tag">Opponent</div>
+        <div id="opp-display" class="u-name opp-name">SCANNING...</div>
     </div>
-    <div id="turn-indicator">OFFLINE</div>
-    <div style="text-align: right;">
-        <div class="user-tag">You</div>
-        <div id="my-display" class="user-name">...</div>
+    <div id="turn-status">OFFLINE</div>
+    <div class="u-info" style="text-align: right;">
+        <div class="u-tag">Player</div>
+        <div id="my-display" class="u-name">...</div>
     </div>
 </div>
 
-<div id="my-code-display">My Code: <span id="my-code-val">---</span></div>
-
-<div id="main-container">
-    <div id="terminal">
-        <div id="log">/system/lunar: Link established.</div>
-        <div id="input-zone">
-            <div class="input-group">
+<div id="main-wrapper">
+    <div id="my-code-pill">Your Code: <span id="my-code-val">---</span></div>
+    
+    <div id="terminal-box">
+        <div id="log-flow">
+            <div class="m-them">System: Awaiting connection...</div>
+        </div>
+        
+        <div id="control-panel">
+            <div class="input-row">
                 <input type="number" id="guess-in" inputmode="numeric" placeholder="???" oninput="if(this.value.length > 3) this.value = this.value.slice(0, 3);">
-                <button id="fire-btn" class="btn-main" onclick="submitGuess()" disabled>GO</button>
+                <button id="fire-btn" class="btn-fire" onclick="submitGuess()" disabled>GO</button>
             </div>
         </div>
     </div>
 </div>
 
-<div id="step-name" class="overlay">
-    <div class="modal">
-        <div style="font-size: 40px; margin-bottom: 10px;">🌙</div>
-        <h2>Enter Name</h2>
-        <input type="text" id="name-input" class="large-in" placeholder="Your Name">
-        <button class="btn-main" style="width:100%; height: 55px;" onclick="saveName()">Begin Mission</button>
+<div id="step-name" class="full-overlay">
+    <div class="lunar-card">
+        <div class="moon-icon">🌑</div>
+        <h2>Welcome</h2>
+        <p>Please enter your name.</p>
+        <input type="text" id="name-input" class="big-input" placeholder="Your Name">
+        <button class="btn-fire" style="width:100%; height: 60px;" onclick="saveName()">Start Game</button>
     </div>
 </div>
 
-<div id="step-share" class="overlay" style="display:none">
-    <div class="modal">
-        <h2>Target Link</h2>
-        <p style="color:#94a3b8; font-size: 12px;">Share this frequency with your enemy:</p>
-        <div id="link-display">...</div>
-        <button class="btn-main" style="width:100%; height: 55px;" onclick="copyInvite(this)">Copy Frequency</button>
+<div id="step-share" class="full-overlay" style="display:none">
+    <div class="lunar-card">
+        <h2>Invite Friend</h2>
+        <p>Send this link to your opponent:</p>
+        <div id="link-display" class="link-box">...</div>
+        <button id="copy-btn" class="btn-fire" style="width:100%; height: 60px;" onclick="copyInvite()">Copy Link</button>
     </div>
 </div>
 
-<div id="step-secret" class="overlay" style="display:none">
-    <div class="modal">
-        <h2>Set Firewall</h2>
-        <p style="color:#94a3b8; font-size: 12px;">Enter 3 digits for the enemy to guess:</p>
-        <input type="number" id="secret-input" inputmode="numeric" class="large-in" placeholder="000" oninput="if(this.value.length > 3) this.value = this.value.slice(0, 3);">
-        <button class="btn-main" style="width:100%; height: 55px;" onclick="saveSecret()">Lock Code</button>
+<div id="step-secret" class="full-overlay" style="display:none">
+    <div class="lunar-card">
+        <h2>Set Your Code</h2>
+        <p>Choose a 3-digit secret code.</p>
+        <input type="number" id="secret-input" inputmode="numeric" class="big-input" placeholder="000" oninput="if(this.value.length > 3) this.value = this.value.slice(0, 3);">
+        <button class="btn-fire" style="width:100%; height: 60px;" onclick="saveSecret()">Confirm Code</button>
     </div>
 </div>
 
-<div id="step-win" class="overlay" style="display:none">
-    <div class="modal">
-        <h1 id="win-status" style="font-size: 24px;">OVER</h1>
-        <p id="win-detail" style="font-size: 14px; color: #94a3b8;"></p>
-        <button id="rematch-btn" class="btn-main" style="width:100%; height: 55px; margin-top: 20px;" onclick="requestRematch()">Request Rematch</button>
-        <button class="btn-main" style="width:100%; height: 45px; margin-top: 10px; background: transparent; color: #64748b; border: 1px solid var(--border);" onclick="location.reload()">New Session</button>
+<div id="step-win" class="full-overlay" style="display:none">
+    <div class="lunar-card">
+        <h1 id="win-status" style="font-size: 30px; margin:0; color: #fff;">GAME OVER</h1>
+        <p id="win-detail" style="margin: 15px 0 30px; color: #888;"></p>
+        <button id="rematch-btn" class="btn-fire" style="width:100%; height: 60px;" onclick="requestRematch()">Play Again</button>
+        <button class="btn-fire" style="width:100%; height: 50px; margin-top: 15px; background: transparent; color: #444; border: 1px solid #222;" onclick="location.reload()">Exit Game</button>
     </div>
 </div>
 
 <script>
+// --- FIREBASE SETUP ---
 const firebaseConfig = {
     apiKey: "AIzaSyCkpSNJP6-puaQsB9H5ZX_pp9alrbR58lI",
     authDomain: "pinga-8bba9.firebaseapp.com",
@@ -291,17 +326,15 @@ let role, matchRef, mySecret = "", oppSecret = "", currentTurn = 'p1', myName = 
 let lastLogTs = 0;
 
 window.onload = function() {
-    const savedName = localStorage.getItem('decryption_codename');
-    if (savedName) {
-        document.getElementById('name-input').value = savedName;
-    }
+    const savedName = localStorage.getItem('player_name');
+    if (savedName) document.getElementById('name-input').value = savedName;
 };
 
 function saveName() {
-    myName = document.getElementById('name-input').value || "User";
-    localStorage.setItem('decryption_codename', myName);
-
+    myName = document.getElementById('name-input').value.trim() || "Player";
+    localStorage.setItem('player_name', myName);
     if (myName.toLowerCase().includes("sumaiya")) myName = "Sumaiya 🖤💎";
+    
     document.getElementById('my-display').innerText = myName;
     document.getElementById('step-name').style.display = 'none';
 
@@ -315,21 +348,20 @@ function saveName() {
         role = 'p1';
         const newId = Math.random().toString(36).substring(2, 7);
         matchRef = db.ref("decryption/" + newId);
-        document.getElementById('link-display').innerText = window.location.origin + window.location.pathname + "?m=" + newId;
+        const link = window.location.origin + window.location.pathname + "?m=" + newId;
+        document.getElementById('link-display').innerText = link;
         document.getElementById('step-share').style.display = 'flex';
-        matchRef.set({ p1N: myName, p2N: "Scanning...", turn: 'p1', rematchP1: false, rematchP2: false });
+        matchRef.set({ p1N: myName, p2N: "SCANNING...", turn: 'p1', rematchP1: false, rematchP2: false });
     }
     initSync();
 }
 
 function saveSecret() {
     const val = document.getElementById('secret-input').value;
-    if(val.length !== 3) return alert("3 digits required.");
+    if(val.length !== 3) return alert("Must be 3 digits.");
     mySecret = val;
-    
     document.getElementById('my-code-val').innerText = mySecret;
-    document.getElementById('my-code-display').style.display = 'block';
-
+    document.getElementById('my-code-pill').style.display = 'block';
     let up = {}; up[role + "Code"] = val;
     matchRef.update(up);
     document.getElementById('step-secret').style.display = 'none';
@@ -342,89 +374,67 @@ function initSync() {
         oppSecret = (role === 'p1') ? d.p2Code : d.p1Code;
         document.getElementById('opp-display').innerText = (role === 'p1') ? d.p2N : d.p1N;
         
-        if(currentTurn !== d.turn && d.turn === role) {
-            if ("vibrate" in navigator) navigator.vibrate([100, 50, 100]);
+        if(currentTurn !== d.turn && d.turn === role && "vibrate" in navigator) {
+            navigator.vibrate([100, 50, 100]);
         }
-        
         currentTurn = d.turn;
 
-        if(role === 'p1' && d.p2N !== "Scanning..." && !mySecret) {
+        if(role === 'p1' && d.p2N !== "SCANNING..." && !mySecret) {
             document.getElementById('step-share').style.display = 'none';
             document.getElementById('step-secret').style.display = 'flex';
         }
 
-        const indicator = document.getElementById('turn-indicator');
+        const indicator = document.getElementById('turn-status');
         const btn = document.getElementById('fire-btn');
         if(currentTurn === role) {
             indicator.innerText = "YOUR TURN";
-            indicator.style.color = "var(--accent-blue)";
-            indicator.style.borderColor = "var(--accent-blue)";
-            btn.disabled = false; btn.innerText = "GO";
+            indicator.style.color = "#fff";
+            indicator.style.background = "#333";
+            btn.disabled = false;
         } else {
             indicator.innerText = "WAITING";
-            indicator.style.color = "#94a3b8";
-            indicator.style.borderColor = "var(--border)";
-            btn.disabled = true; btn.innerText = "•••";
+            indicator.style.color = "#444";
+            indicator.style.background = "#111";
+            btn.disabled = true;
         }
 
-        if(d.lastGuess) {
-            updateLogDisplay(d.lastGuess);
-        }
+        if(d.lastGuess) updateLogDisplay(d.lastGuess);
 
-        const oppRematch = (role === 'p1') ? d.rematchP2 : d.rematchP1;
-        const myRematch = (role === 'p1') ? d.rematchP1 : d.rematchP2;
-        
         if(d.winner) {
             document.getElementById('step-win').style.display = 'flex';
-            document.getElementById('win-status').innerText = d.winner === role ? "MISSION SUCCESS" : "MISSION FAILURE";
-            document.getElementById('win-status').style.color = d.winner === role ? "var(--accent-blue)" : "var(--danger-red)";
-            document.getElementById('win-detail').innerText = d.winner === role ? "Enemy code cracked. Lunar surface secure." : "Your firewall was breached by the enemy.";
+            const status = document.getElementById('win-status');
+            status.innerText = d.winner === role ? "VICTORY" : "DEFEAT";
+            status.style.color = "#fff";
+            document.getElementById('win-detail').innerText = d.winner === role ? "You guessed the code correctly!" : "The opponent guessed your code first.";
             
             const rBtn = document.getElementById('rematch-btn');
-            if(oppRematch && !myRematch) {
-                rBtn.innerText = "Opponent wants rematch!";
-                rBtn.style.background = "var(--accent-blue)";
-            } else if (myRematch && !oppRematch) {
-                rBtn.innerText = "Waiting for Opponent...";
-                rBtn.disabled = true;
-            }
+            const oppRematch = (role === 'p1') ? d.rematchP2 : d.rematchP1;
+            const myRematch = (role === 'p1') ? d.rematchP1 : d.rematchP2;
+
+            if(oppRematch && !myRematch) { rBtn.innerText = "Opponent Ready!"; rBtn.style.background = "#fff"; rBtn.style.color="black"; }
+            else if (myRematch && !oppRematch) { rBtn.innerText = "Awaiting Enemy..."; rBtn.disabled = true; }
         }
 
-        if(d.rematchP1 && d.rematchP2) {
-            resetGame();
-        }
+        if(d.rematchP1 && d.rematchP2) resetGame();
     });
 }
 
 function requestRematch() {
-    let up = {}; 
-    up[role === 'p1' ? 'rematchP1' : 'rematchP2'] = true;
+    let up = {}; up[role === 'p1' ? 'rematchP1' : 'rematchP2'] = true;
     matchRef.update(up);
 }
 
 function resetGame() {
-    mySecret = "";
-    oppSecret = "";
-    lastLogTs = 0;
-    document.getElementById('log').innerHTML = "/system/lunar: Link established. Rematch initiated.";
-    document.getElementById('my-code-display').style.display = 'none';
+    mySecret = ""; oppSecret = ""; lastLogTs = 0;
+    document.getElementById('log-flow').innerHTML = '<div class="m-them">Game reset. Pick a new code.</div>';
+    document.getElementById('my-code-pill').style.display = 'none';
     document.getElementById('step-win').style.display = 'none';
-    document.getElementById('rematch-btn').innerText = "Request Rematch";
     document.getElementById('rematch-btn').disabled = false;
+    document.getElementById('rematch-btn').innerText = "Play Again";
     document.getElementById('rematch-btn').style.background = "";
     document.getElementById('step-secret').style.display = 'flex';
-    document.getElementById('secret-input').value = "";
-    
     if(role === 'p1') {
-        matchRef.update({
-            p1Code: null,
-            p2Code: null,
-            winner: null,
-            lastGuess: null,
-            turn: 'p1',
-            rematchP1: false,
-            rematchP2: false
-        });
+        matchRef.update({ p1Code: null, p2Code: null, winner: null, lastGuess: null, turn: 'p1', rematchP1: false, rematchP2: false });
     }
 }
 
@@ -443,43 +453,48 @@ function submitGuess() {
         if(gArr[i] !== "X" && sArr.includes(gArr[i])) { correctNum++; sArr[sArr.indexOf(gArr[i])] = null; }
     }
 
-    const resultStr = `${correctNum + pos} Correct | ${pos} Position`;
-    const nextTurn = role === 'p1' ? 'p2' : 'p1';
-
-    let updates = {
-        turn: nextTurn,
-        lastGuess: {
-            by: role,
-            name: myName,
-            val: guess,
-            res: resultStr,
-            ts: Date.now()
-        }
-    };
-
-    if(pos === 3) updates.winner = role;
-    matchRef.update(updates);
+    matchRef.update({
+        turn: role === 'p1' ? 'p2' : 'p1',
+        lastGuess: { by: role, val: guess, res: `${correctNum + pos} Correct | ${pos} Pos`, ts: Date.now() },
+        winner: pos === 3 ? role : null
+    });
     document.getElementById('guess-in').value = "";
 }
 
 function updateLogDisplay(g) {
     if(g.ts <= lastLogTs) return;
     lastLogTs = g.ts;
-    const log = document.getElementById('log');
+    const log = document.getElementById('log-flow');
     const div = document.createElement('div');
-    div.className = g.by === role ? 'log-me' : 'log-them';
-    div.innerHTML = `<strong>${g.val}</strong><br><span style="font-size:11px;">${g.res}</span>`;
+    div.className = g.by === role ? 'm-me' : 'm-them';
+    div.innerHTML = `<span style="opacity:0.6; font-size:11px; letter-spacing: 0.5px;">GUESS: ${g.val}</span><br><strong>${g.res}</strong>`;
     log.appendChild(div);
     log.scrollTop = log.scrollHeight;
 }
 
-function copyInvite(btn) {
-    const el = document.createElement('textarea');
-    el.value = document.getElementById('link-display').innerText;
-    document.body.appendChild(el); el.select();
-    document.execCommand('copy'); document.body.removeChild(el);
-    btn.innerText = "COPIED!";
-    setTimeout(() => btn.innerText = "Copy Frequency", 2000);
+function copyInvite() {
+    const linkText = document.getElementById('link-display').innerText;
+    const btn = document.getElementById('copy-btn');
+    
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(linkText).then(() => {
+            btn.innerText = "COPIED!";
+            setTimeout(() => btn.innerText = "Copy Link", 2000);
+        }).catch(() => fallbackCopy(linkText));
+    } else {
+        fallbackCopy(linkText);
+    }
+}
+
+function fallbackCopy(text) {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    document.body.appendChild(textArea);
+    textArea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textArea);
+    document.getElementById('copy-btn').innerText = "COPIED!";
+    setTimeout(() => document.getElementById('copy-btn').innerText = "Copy Link", 2000);
 }
 </script>
 </body>
