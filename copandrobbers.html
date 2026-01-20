@@ -306,7 +306,7 @@ function initSync() {
             scores = d.scores;
             currentAssigns = d.assignments;
             emojiCount = 0; botsHaveEmojied = false; botsWhoReacted.clear();
-            updateLeaderboard();
+            updateLeaderboard(d);
             displayChitReveal(d.assignments[role]);
             unlockGuessing(false);
             document.getElementById('overlay-summary').style.display = 'none';
@@ -323,7 +323,7 @@ function initSync() {
         }
 
         if(d.status === 'RESULTS') {
-            showSummary(d.assignments, d.lastGain, d.guessData);
+            showSummary(d.assignments, d.lastGain, d.guessData, d);
             if (d[role + 'Ready'] && !d[ (role === 'p1' ? 'p2' : 'p1') + 'Ready' ]) {
                 document.getElementById('sync-status').innerText = "WAITING FOR PARTNER...";
                 document.getElementById('next-round-btn').style.display = 'none';
@@ -387,14 +387,14 @@ function displayEmoji(data) {
     log.scrollTop = log.scrollHeight;
 }
 
-function updateLeaderboard() {
+function updateLeaderboard(d) {
     const sorted = Object.entries(scores).sort((a,b) => b[1] - a[1]);
     const lb = document.getElementById('leaderboard');
     lb.innerHTML = '';
     sorted.forEach(([id, val], i) => {
         let n = "BOT";
-        if(id === 'p1') n = "YOU";
-        else if(id === 'p2') n = document.getElementById('p2-name-label').innerText;
+        if(id === 'p1') n = (role === 'p1') ? "YOU" : d.p1N;
+        else if(id === 'p2') n = (role === 'p2') ? "YOU" : d.p2N;
         else if(id === 'bot1') n = "ALPHA";
         else if(id === 'bot2') n = "ZETA";
         lb.innerHTML += `<div class="rank-item ${i===0?'rank-first':''}"><div>${n}</div><div>${val}</div></div>`;
@@ -422,8 +422,8 @@ function policeGuess(targetId, actingPoliceId = null) {
         const thiefId = Object.keys(d.assignments).find(k => d.assignments[k] === 'Thief');
         let newScores = {...d.scores}, gain = { p1:0, p2:0, bot1:0, bot2:0 };
         
-        let pName = activePoliceKey === 'p1' ? "YOU" : (activePoliceKey === 'p2' ? d.p2N : (activePoliceKey === 'bot1' ? 'ALPHA' : 'ZETA'));
-        let tName = targetId === 'p1' ? "YOU" : (targetId === 'p2' ? d.p2N : (targetId === 'bot1' ? 'ALPHA' : 'ZETA'));
+        let pName = activePoliceKey === 'p1' ? d.p1N : (activePoliceKey === 'p2' ? d.p2N : (activePoliceKey === 'bot1' ? 'ALPHA' : 'ZETA'));
+        let tName = targetId === 'p1' ? d.p1N : (targetId === 'p2' ? d.p2N : (targetId === 'bot1' ? 'ALPHA' : 'ZETA'));
         
         let correct = (targetId === thiefId);
         if(correct) gain[activePoliceKey] = 1500; else gain[thiefId] = 1500;
@@ -441,7 +441,7 @@ function policeGuess(targetId, actingPoliceId = null) {
     });
 }
 
-function showSummary(assigns, gains, gData) {
+function showSummary(assigns, gains, gData, d) {
     const content = document.getElementById('summary-content');
     content.innerHTML = `<div style="padding:15px; background:rgba(255,255,255,0.05); border-radius:15px; margin-bottom:15px;">
         <span style="color:var(--police)">${gData.police}</span> targeted <span style="color:var(--thief)">${gData.target}</span><br>
@@ -449,8 +449,8 @@ function showSummary(assigns, gains, gData) {
     
     for(let p in assigns) {
         let n = "BOT";
-        if(p === 'p1') n = "YOU";
-        else if(p === 'p2') n = document.getElementById('p2-name-label').innerText;
+        if(p === 'p1') n = (role === 'p1' ? "YOU" : d.p1N);
+        else if(p === 'p2') n = (role === 'p2' ? "YOU" : d.p2N);
         else if(p === 'bot1') n = "ALPHA";
         else if(p === 'bot2') n = "ZETA";
         
