@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Lunar Tactics 🌙</title>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root { 
+            --void: #050508;
+            --glass: rgba(255, 255, 255, 0.03);
+            --border: rgba(255, 255, 255, 0.08);
+            --accent: #ffffff;
+            --p1-color: #ffffff;
+            --p2-color: #7a7a8c;
+            --p1-glow: 0 0 20px rgba(255, 255, 255, 0.2);
+            --p2-glow: 0 0 20px rgba(122, 122, 140, 0.2);
+        }
+
+        * { box-sizing: border-box; font-family: 'Space Grotesk', sans-serif; -webkit-tap-highlight-color: transparent; }
+        
+        body { 
+            background: var(--void); 
+            background-image: 
+                radial-gradient(circle at 50% -20%, #1e1e3f 0%, #050508 70%),
+                url('https://www.transparenttextures.com/patterns/stardust.png');
+            color: #fff; margin: 0; height: 100dvh; overflow: hidden; display: flex; flex-direction: column; 
+        }
+
+        /* --- HEADER --- */
+        #header { 
+            padding: 25px 20px; 
+            border-bottom: 1px solid var(--border); 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            background: rgba(5, 5, 8, 0.8);
+            backdrop-filter: blur(20px);
+            z-index: 10;
+        }
+
+        .u-info { display: flex; flex-direction: column; min-width: 90px; }
+        .u-tag { font-size: 9px; color: #4a4a5e; text-transform: uppercase; letter-spacing: 4px; font-weight: 700; margin-bottom: 4px; }
+        .score-val { font-size: 32px; font-weight: 700; font-variant-numeric: tabular-nums; transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        .score-bump { transform: scale(1.3); color: #fff; text-shadow: 0 0 20px rgba(255,255,255,0.5); }
+
+        #turn-status { 
+            font-size: 10px; padding: 10px 24px; border-radius: 40px; 
+            border: 1px solid var(--border); font-weight: 700; letter-spacing: 2px;
+            transition: all 0.5s ease; background: var(--glass);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            display: flex; align-items: center; gap: 8px;
+        }
+        
+        .ping { width: 6px; height: 6px; background: #00ff88; border-radius: 50%; display: inline-block; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(1.5); } 100% { opacity: 1; transform: scale(1); } }
+
+        /* --- GAME GRID --- */
+        #game-container { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 25px; position: relative; }
+        
+        #round-counter { font-size: 10px; color: #4a4a5e; letter-spacing: 3px; margin-bottom: 20px; text-transform: uppercase; }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            width: 100%;
+            max-width: 380px;
+            aspect-ratio: 1/1;
+            padding: 10px;
+            background: rgba(255,255,255,0.01);
+            border-radius: 24px;
+            border: 1px solid rgba(255,255,255,0.03);
+        }
+
+        .cell {
+            background: linear-gradient(145deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01));
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 52px;
+            font-weight: 300;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+            position: relative;
+        }
+
+        .cell.active:hover { border-color: rgba(255,255,255,0.2); background: rgba(255,255,255,0.06); }
+        .cell.active:active { transform: scale(0.9); background: rgba(255,255,255,0.1); }
+        
+        .cell.winning-cell { background: rgba(255, 255, 255, 0.15); border-color: #fff; animation: winPulse 1s infinite alternate; }
+        @keyframes winPulse { from { box-shadow: 0 0 10px rgba(255,255,255,0.1); } to { box-shadow: 0 0 30px rgba(255,255,255,0.4); } }
+
+        .cell span { 
+            filter: drop-shadow(0 0 10px currentColor);
+            animation: pieceEnter 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; 
+        }
+
+        @keyframes pieceEnter {
+            from { transform: scale(0.2) rotate(-45deg); opacity: 0; }
+            to { transform: scale(1) rotate(0); opacity: 1; }
+        }
+
+        /* --- ROUND ALERTS --- */
+        #round-alert {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            z-index: 500; pointer-events: none; text-align: center; opacity: 0; width: 100%;
+        }
+        .alert-text { font-size: 72px; font-weight: 900; letter-spacing: -4px; text-transform: uppercase; margin: 0; font-style: italic; }
+        .alert-anim { animation: alertFloat 1.8s cubic-bezier(0.23, 1, 0.32, 1) forwards; }
+        
+        @keyframes alertFloat {
+            0% { transform: translate(-50%, 0%) scale(0.8); opacity: 0; filter: blur(20px); }
+            15% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; filter: blur(0); }
+            85% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            100% { transform: translate(-50%, -100%) scale(0.9); opacity: 0; filter: blur(10px); }
+        }
+
+        /* --- OVERLAYS --- */
+        .full-overlay { position: fixed; inset: 0; background: rgba(2,2,4,0.9); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 25px; backdrop-filter: blur(25px); }
+        
+        .lunar-card { 
+            width: 100%; max-width: 400px; padding: 60px 35px; border-radius: 40px; 
+            border: 1px solid var(--border); background: linear-gradient(160deg, #0f0f1a, #050508);
+            text-align: center; box-shadow: 0 40px 100px rgba(0,0,0,0.8);
+            animation: cardIn 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes cardIn { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        .btn-fire { 
+            background: #fff; color: #000; padding: 20px 30px; border-radius: 24px; 
+            font-weight: 700; border: none; cursor: pointer; width: 100%; margin-top: 25px;
+            transition: all 0.3s; font-size: 13px; text-transform: uppercase; letter-spacing: 2px;
+            box-shadow: 0 10px 30px rgba(255,255,255,0.1);
+        }
+        .btn-fire:active { transform: translateY(2px) scale(0.98); box-shadow: 0 5px 15px rgba(255,255,255,0.05); }
+        .btn-fire:disabled { background: #15151e; color: #3a3a4e; box-shadow: none; cursor: wait; }
+
+        .big-input { 
+            width: 100%; margin: 30px 0; font-size: 20px; padding: 22px; border-radius: 24px; 
+            border: 1px solid #1a1a2e; background: #020205; color: #fff; text-align: center;
+            transition: all 0.4s;
+        }
+        .big-input:focus { border-color: #4a4a5e; outline: none; box-shadow: 0 0 30px rgba(255,255,255,0.02); }
+        
+        .link-box { 
+            background: #020205; padding: 18px; border-radius: 20px; font-size: 10px; 
+            margin: 25px 0; border: 1px solid #1a1a2e; color: #5a5a7e; font-family: 'Courier New', monospace;
+            word-break: break-all;
+        }
+
+        .grid-reset { animation: gridWarp 0.8s cubic-bezier(0.45, 0, 0.55, 1); }
+        @keyframes gridWarp {
+            0% { transform: rotateX(0); filter: brightness(1); }
+            50% { transform: rotateX(20deg) scale(0.9); filter: brightness(0.4) blur(4px); }
+            100% { transform: rotateX(0); filter: brightness(1); }
+        }
+    </style>
+</head>
+<body>
+
+<div id="header">
+    <div class="u-info">
+        <div id="p1-name" class="u-tag">PLAYER 1</div>
+        <div id="p1-score" class="score-val">0</div>
+    </div>
+    <div id="turn-status"><span class="ping"></span> INITIALIZING...</div>
+    <div class="u-info" style="text-align: right;">
+        <div id="p2-name" class="u-tag">PLAYER 2</div>
+        <div id="p2-score" class="score-val">0</div>
+    </div>
+</div>
+
+<div id="game-container">
+    <div id="round-counter">Deployment Round 1</div>
+    <div class="grid" id="grid">
+        <div class="cell" onclick="makeMove(0)"></div>
+        <div class="cell" onclick="makeMove(1)"></div>
+        <div class="cell" onclick="makeMove(2)"></div>
+        <div class="cell" onclick="makeMove(3)"></div>
+        <div class="cell" onclick="makeMove(4)"></div>
+        <div class="cell" onclick="makeMove(5)"></div>
+        <div class="cell" onclick="makeMove(6)"></div>
+        <div class="cell" onclick="makeMove(7)"></div>
+        <div class="cell" onclick="makeMove(8)"></div>
+    </div>
+</div>
+
+<div id="round-alert">
+    <h2 class="alert-text" id="alert-label">ROUND WON</h2>
+</div>
+
+<div id="step-name" class="full-overlay">
+    <div class="lunar-card">
+        <h2 style="font-weight: 300; margin:0; color: #5a5a7e; letter-spacing: 5px; text-transform: uppercase; font-size: 12px;">Welcome to</h2>
+        <h1 style="margin: 10px 0 30px 0; letter-spacing: -2px; font-size: 42px;">Lunar Tactics</h1>
+        <input type="text" id="name-input" class="big-input" placeholder="Enter Callsign">
+        <button class="btn-fire" onclick="saveName()">Begin Operation</button>
+    </div>
+</div>
+
+<div id="step-share" class="full-overlay" style="display:none">
+    <div class="lunar-card">
+        <h2>Awaiting Rival</h2>
+        <p style="color: #5a5a7e; font-size: 14px;">Establish a secure link with your opponent.</p>
+        <div id="link-display" class="link-box"></div>
+        <button id="copy-btn" class="btn-fire" onclick="copyInvite()">Copy Secure Link</button>
+    </div>
+</div>
+
+<div id="step-win" class="full-overlay" style="display:none">
+    <div class="lunar-card">
+        <h1 id="win-status" style="font-size: 52px; margin-bottom: 5px; font-style: italic;">VICTORY</h1>
+        <p id="win-detail" style="color: #5a5a7e; margin-bottom: 40px; text-transform: uppercase; letter-spacing: 2px; font-size: 12px;"></p>
+        <button id="rematch-btn" class="btn-fire" onclick="requestRematch()">Sync Rematch (0/2)</button>
+    </div>
+</div>
+
+<script>
+// --- CONFIG & STATE ---
+const firebaseConfig = {
+    apiKey: "AIzaSyCkpSNJP6-puaQsB9H5ZX_pp9alrbR58lI",
+    authDomain: "pinga-8bba9.firebaseapp.com",
+    databaseURL: "https://pinga-8bba9-default-rtdb.firebaseio.com",
+    projectId: "pinga-8bba9",
+    storageBucket: "pinga-8bba9.firebasestorage.app",
+    messagingSenderId: "751196556015",
+    appId: "1:751196556015:web:504f02ccc79778c41da91a"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+let role, matchRef, myName = "", currentBoard = Array(9).fill("");
+let p1Score = 0, p2Score = 0, currentTurn = 'p1', nextStarter = 'p2';
+let roundStartTime = Date.now();
+
+// --- SOUND ENGINE ---
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+function playSound(freq, type, duration, vol=0.1) {
+    if(audioCtx.state === 'suspended') audioCtx.resume();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + duration);
+}
+
+const sfx = {
+    move: () => playSound(440, 'sine', 0.15, 0.05),
+    yourTurn: () => {
+        playSound(880, 'triangle', 0.1, 0.04);
+        setTimeout(() => playSound(1320, 'triangle', 0.1, 0.04), 60);
+        if ("vibrate" in navigator) navigator.vibrate(80);
+    },
+    win: () => {
+        [523, 659, 783, 1046].forEach((f, i) => setTimeout(() => playSound(f, 'sine', 0.6, 0.1), i * 120));
+        if ("vibrate" in navigator) navigator.vibrate([100, 50, 100, 50, 300]);
+    },
+    lose: () => {
+        [220, 180, 140].forEach((f, i) => setTimeout(() => playSound(f, 'sawtooth', 0.5, 0.06), i * 180));
+    },
+    draw: () => {
+        playSound(300, 'square', 0.2, 0.05);
+        setTimeout(() => playSound(300, 'square', 0.2, 0.05), 300);
+    }
+};
+
+// --- CORE LOGIC ---
+window.onload = () => {
+    const saved = localStorage.getItem('lunarTacticsName');
+    if(saved) document.getElementById('name-input').value = saved;
+};
+
+function saveName() {
+    myName = document.getElementById('name-input').value.trim() || "Player";
+    localStorage.setItem('lunarTacticsName', myName);
+    document.getElementById('step-name').style.display = 'none';
+    const mId = new URLSearchParams(window.location.search).get('m');
+    
+    if(mId) {
+        role = 'p2';
+        matchRef = db.ref("tictactoe/" + mId);
+        matchRef.update({ p2N: myName });
+    } else {
+        role = 'p1';
+        const newId = Math.random().toString(36).substring(2, 8);
+        matchRef = db.ref("tictactoe/" + newId);
+        const link = window.location.origin + window.location.pathname + "?m=" + newId;
+        document.getElementById('link-display').innerText = link;
+        document.getElementById('step-share').style.display = 'flex';
+        matchRef.set({ p1N: myName, p2N: "Waiting...", turn: 'p1', starter: 'p2', board: currentBoard, s1: 0, s2: 0, r1: false, r2: false });
+    }
+    initSync();
+}
+
+function initSync() {
+    matchRef.on('value', snap => {
+        const d = snap.val(); if(!d) return;
+        
+        const oldS1 = p1Score;
+        const oldS2 = p2Score;
+
+        document.getElementById('p1-name').innerText = d.p1N;
+        document.getElementById('p2-name').innerText = d.p2N;
+        document.getElementById('p1-score').innerText = d.s1;
+        document.getElementById('p2-score').innerText = d.s2;
+        
+        // Update Round Counter
+        const totalRounds = d.s1 + d.s2 + 1;
+        document.getElementById('round-counter').innerText = `Deployment Round ${totalRounds}`;
+
+        if(d.s1 > oldS1) { bumpScore('p1-score'); triggerRoundEnd(role === 'p1' ? 'WIN' : 'LOSE'); }
+        if(d.s2 > oldS2) { bumpScore('p2-score'); triggerRoundEnd(role === 'p2' ? 'WIN' : 'LOSE'); }
+        
+        if (!d.board.includes("") && d.s1 === oldS1 && d.s2 === oldS2 && d.board.join('') !== Array(9).fill("").join('')) {
+            triggerRoundEnd('DRAW');
+        }
+
+        if(d.p2N !== "Waiting...") document.getElementById('step-share').style.display = 'none';
+        
+        if(currentTurn !== d.turn && d.turn === role) {
+            sfx.yourTurn();
+            roundStartTime = Date.now(); // Reset timer for speed bonus
+        }
+
+        currentTurn = d.turn;
+        nextStarter = d.starter || 'p2';
+        currentBoard = d.board;
+        p1Score = d.s1;
+        p2Score = d.s2;
+
+        renderBoard();
+        checkGameStatus(d);
+        syncRematch(d);
+    });
+}
+
+function triggerRoundEnd(type) {
+    const label = document.getElementById('alert-label');
+    const container = document.getElementById('round-alert');
+    
+    if(type === 'WIN') { label.innerText = "DOMINATED"; label.style.color = "#fff"; sfx.win(); }
+    else if(type === 'LOSE') { label.innerText = "DEFEATED"; label.style.color = "#ff3e3e"; sfx.lose(); }
+    else { label.innerText = "STALEMATE"; label.style.color = "#5a5a7e"; sfx.draw(); }
+
+    container.classList.remove('alert-anim');
+    void container.offsetWidth; 
+    container.classList.add('alert-anim');
+    
+    document.getElementById('grid').classList.add('grid-reset');
+    setTimeout(() => {
+        document.getElementById('grid').classList.remove('grid-reset');
+        // Clear winning highlights
+        document.querySelectorAll('.cell').forEach(c => c.classList.remove('winning-cell'));
+    }, 800);
+}
+
+function bumpScore(id) {
+    const el = document.getElementById(id);
+    el.classList.add('score-bump');
+    setTimeout(() => el.classList.remove('score-bump'), 400);
+}
+
+function renderBoard() {
+    const cells = document.querySelectorAll('.cell');
+    currentBoard.forEach((val, i) => {
+        if(cells[i].innerText !== val) {
+            cells[i].innerHTML = val !== "" ? `<span>${val}</span>` : "";
+            if(val !== "") sfx.move();
+        }
+        cells[i].className = val === "" ? "cell active" : "cell taken";
+        cells[i].style.color = val === 'X' ? 'var(--p1-color)' : 'var(--p2-color)';
+    });
+
+    const status = document.getElementById('turn-status');
+    if (currentTurn === role) {
+        status.innerHTML = `<span class="ping"></span> SYSTEM ACTIVE`;
+        status.style.borderColor = "#fff";
+        status.style.color = "#fff";
+        status.style.boxShadow = "0 0 20px rgba(255,255,255,0.1)";
+    } else {
+        status.innerHTML = `<span class="ping" style="background:#4a4a5e"></span> SYSTEM STANDBY`;
+        status.style.borderColor = "var(--border)";
+        status.style.color = "#3a3a4e";
+        status.style.boxShadow = "none";
+    }
+}
+
+function makeMove(idx) {
+    if(currentTurn !== role || currentBoard[idx] !== "") return;
+    currentBoard[idx] = (role === 'p1') ? 'X' : 'O';
+    
+    const winResult = calculateWinner(currentBoard);
+    const isDraw = !currentBoard.includes("") && !winResult;
+
+    if (winResult) {
+        // Feature: Warp Drive Speed Bonus (+2 points if won in < 5 seconds)
+        const moveDuration = (Date.now() - roundStartTime) / 1000;
+        const pointGain = moveDuration < 5 ? 2 : 1;
+        
+        // Highlight winning cells
+        winResult.line.forEach(index => {
+            document.querySelectorAll('.cell')[index].classList.add('winning-cell');
+        });
+
+        let ns1 = p1Score, ns2 = p2Score;
+        if(role === 'p1') ns1 += pointGain; else ns2 += pointGain;
+        
+        setTimeout(() => {
+            matchRef.update({ board: Array(9).fill(""), turn: nextStarter, starter: nextStarter === 'p1' ? 'p2' : 'p1', s1: ns1, s2: ns2 });
+        }, 600);
+        
+    } else if (isDraw) {
+        matchRef.update({ board: Array(9).fill(""), turn: nextStarter, starter: nextStarter === 'p1' ? 'p2' : 'p1', s1: p1Score, s2: p2Score });
+    } else {
+        matchRef.update({ board: currentBoard, turn: role === 'p1' ? 'p2' : 'p1' });
+    }
+}
+
+function calculateWinner(sq) {
+    const lines = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+    for (let l of lines) {
+        if (sq[l[0]] && sq[l[0]] === sq[l[1]] && sq[l[0]] === sq[l[2]]) {
+            return { symbol: sq[l[0]], line: l };
+        }
+    }
+    return null;
+}
+
+function checkGameStatus(d) {
+    if (d.s1 >= 5 || d.s2 >= 5) {
+        const winnerName = d.s1 >= 5 ? d.p1N : d.p2N;
+        document.getElementById('step-win').style.display = 'flex';
+        document.getElementById('win-status').innerText = winnerName === myName ? "VICTORY" : "DEFEAT";
+        document.getElementById('win-detail').innerText = `${winnerName} has secured the moon. Final Score: ${d.s1} - ${d.s2}`;
+    } else {
+        document.getElementById('step-win').style.display = 'none';
+    }
+}
+
+function requestRematch() {
+    const update = {};
+    update[role === 'p1' ? 'r1' : 'r2'] = true;
+    matchRef.update(update);
+    document.getElementById('rematch-btn').disabled = true;
+}
+
+function syncRematch(d) {
+    const count = (d.r1 ? 1 : 0) + (d.r2 ? 1 : 0);
+    document.getElementById('rematch-btn').innerText = `Sync Rematch (${count}/2)`;
+    if (d.r1 && d.r2) {
+        matchRef.update({ s1: 0, s2: 0, r1: false, r2: false, board: Array(9).fill(""), turn: 'p1', starter: 'p2' });
+        document.getElementById('rematch-btn').disabled = false;
+    }
+}
+
+function copyInvite() {
+    const text = document.getElementById('link-display').innerText;
+    const btn = document.getElementById('copy-btn');
+    
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(() => showSuccess(btn), () => fallbackCopy(text, btn));
+    } else {
+        fallbackCopy(text, btn);
+    }
+}
+
+function fallbackCopy(text, btn) {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.position = "fixed";
+    textArea.style.left = "-9999px";
+    textArea.style.top = "0";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    try {
+        document.execCommand('copy');
+        showSuccess(btn);
+    } catch (err) {
+        btn.innerText = "TAP TO SELECT MANUALLY";
+    }
+    document.body.removeChild(textArea);
+}
+
+function showSuccess(btn) {
+    const oldText = btn.innerText;
+    btn.innerText = "LINK ENCRYPTED & COPIED";
+    btn.style.background = "#5a5a7e";
+    btn.style.color = "#fff";
+    setTimeout(() => {
+        btn.innerText = oldText;
+        btn.style.background = "#fff";
+        btn.style.color = "#000";
+    }, 2000);
+}
+</script>
+</body>
+</html>
