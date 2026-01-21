@@ -3,369 +3,303 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Goorac Lunar | Sivamanihandan</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <title>Goorac Lunar Arcade</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&family=Orbitron:wght@700&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #000000;
-            --surface: #16181c;
-            --border: #2f3336;
-            --text-main: #e7e9ea;
-            --text-dim: #71767b;
-            --moon-blue: #1d9bf0;
-            --moon-silver: #f5f5f7;
+            --accent: #00d2ff;
+            --accent-glow: rgba(0, 210, 255, 0.2);
+            --bg-dark: #020408;
+            --card-bg: #0a0c10;
+            --text-primary: #ffffff;
+            --text-secondary: #94a3b8;
+            --gradient: linear-gradient(135deg, #00d2ff 0%, #3a7bd5 100%);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            background-color: var(--bg);
-            color: var(--text-main);
-            font-family: 'Inter', sans-serif;
-            display: flex;
-            justify-content: center;
-            min-height: 100vh;
-            overflow-y: scroll;
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 50% 50%, rgba(29, 155, 240, 0.05) 0%, transparent 50%);
         }
 
-        /* --- LAYOUT --- */
-        .app-container {
-            display: flex;
-            width: 100%;
-            max-width: 1250px;
+        /* --- LUNAR ELEMENTS --- */
+        .moon-icon {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            display: inline-block;
+            filter: drop-shadow(0 0 15px var(--accent));
+            animation: float 3s ease-in-out infinite;
         }
 
-        /* --- LEFT NAV --- */
-        nav {
-            width: 275px;
-            padding: 10px 20px;
-            display: flex;
-            flex-direction: column;
-            border-right: 1px solid var(--border);
-            position: sticky;
-            top: 0;
-            height: 100vh;
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
         }
 
-        .logo {
-            padding: 12px;
+        /* --- HERO --- */
+        .hero {
+            padding: 8rem 10% 4rem;
+            text-align: center;
+        }
+
+        .hero h1 {
             font-family: 'Orbitron', sans-serif;
-            font-size: 1.5rem;
-            color: var(--moon-silver);
-            text-decoration: none;
-            margin-bottom: 10px;
-            transition: transform 0.3s ease;
+            font-size: clamp(2.5rem, 6vw, 4.5rem);
+            letter-spacing: 4px;
+            margin-bottom: 1rem;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
-        .logo:hover { transform: scale(1.05); }
 
-        .nav-item {
+        .hero p {
+            color: var(--text-secondary);
+            font-size: 1.2rem;
+            max-width: 600px;
+            margin: 0 auto 3rem;
+        }
+
+        /* --- BUTTONS --- */
+        .btn-lunar {
+            background: white;
+            color: black;
+            padding: 18px 45px;
+            border-radius: 12px;
+            border: none;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .btn-lunar:hover {
+            transform: scale(1.05) translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 210, 255, 0.4);
+        }
+
+        /* --- GRID & CARDS --- */
+        .section-title {
+            padding: 0 10%;
+            margin: 5rem 0 2.5rem;
             display: flex;
             align-items: center;
-            padding: 12px 20px;
-            font-size: 1.15rem;
-            border-radius: 99px;
-            cursor: pointer;
-            transition: 0.2s;
-            color: var(--text-main);
+            gap: 20px;
+        }
+
+        .section-title h2 { font-family: 'Orbitron'; font-size: 1.2rem; color: var(--accent); letter-spacing: 2px; }
+        .line { flex: 1; height: 1px; background: linear-gradient(90deg, var(--accent), transparent); opacity: 0.3; }
+
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 3rem;
+            padding: 0 10% 6rem;
+        }
+
+        .game-card {
+            background: var(--card-bg);
+            border-radius: 28px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: 0.4s cubic-bezier(0.23, 1, 0.32, 1);
             text-decoration: none;
-            margin: 4px 0;
-            width: fit-content;
+            color: inherit;
+            position: relative;
+            display: none;
         }
 
-        .nav-item:hover { background: rgba(255, 255, 255, 0.1); }
-        .nav-item.active { font-weight: 800; }
+        .game-card.show { display: block; animation: cardEntrance 0.7s ease forwards; }
 
-        /* --- MAIN FEED --- */
-        main {
-            flex: 1;
-            max-width: 600px;
-            border-right: 1px solid var(--border);
-            min-height: 100vh;
+        .game-card:hover {
+            transform: translateY(-15px);
+            border-color: var(--accent);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.8);
         }
 
-        header {
-            position: sticky;
-            top: 0;
-            background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(15px);
-            padding: 15px;
-            border-bottom: 1px solid var(--border);
-            z-index: 10;
-        }
-
-        header h2 { font-size: 1.2rem; font-weight: 700; letter-spacing: 1px; }
-
-        /* --- COMPOSE AREA (FAKE TWEET BOX) --- */
-        .compose-area {
-            padding: 15px;
+        /* --- SPECIAL NUMBERS IMAGE FOR CRACK THE CODE --- */
+        .numbers-bg {
+            width: 100%;
+            height: 220px;
+            background: #000;
+            position: relative;
+            overflow: hidden;
             display: flex;
-            gap: 12px;
-            border-bottom: 1px solid var(--border);
+            align-items: center;
+            justify-content: center;
         }
 
-        .compose-input {
-            flex: 1;
-            background: transparent;
-            border: none;
+        .numbers-bg::before {
+            content: "10101100 01101010 11110001 10101101 01101111 00011010 10101100 01101010 11110001 10101101 01101111 00011010";
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            color: var(--accent);
+            opacity: 0.3;
+            word-break: break-all;
+            padding: 20px;
+            line-height: 1.2;
+            text-shadow: 0 0 5px var(--accent);
+            animation: scanline 10s linear infinite;
+        }
+
+        @keyframes scanline {
+            from { transform: translateY(0); }
+            to { transform: translateY(-50%); }
+        }
+
+        .numbers-bg::after {
+            content: "DECRYPTING...";
+            position: absolute;
+            font-family: 'Orbitron';
+            font-size: 1rem;
             color: white;
-            font-size: 1.2rem;
-            padding-top: 10px;
-            outline: none;
-            resize: none;
+            letter-spacing: 4px;
+            text-shadow: 0 0 10px var(--accent);
         }
 
-        .lunar-btn {
-            background: var(--moon-silver);
-            color: black;
-            border: none;
-            padding: 8px 18px;
-            border-radius: 99px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: 0.3s;
-            float: right;
-        }
-        .lunar-btn:hover { background: #fff; box-shadow: 0 0 15px rgba(255,255,255,0.3); }
+        .card-img-wrapper { height: 220px; overflow: hidden; position: relative; }
+        .card-img { width: 100%; height: 100%; object-fit: cover; opacity: 0.7; transition: 0.5s; }
+        .game-card:hover .card-img { opacity: 1; transform: scale(1.1); }
 
-        /* --- GAME FEED ANIMATIONS --- */
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateY(20px); }
+        .tag {
+            position: absolute;
+            top: 20px; left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: var(--accent);
+            padding: 6px 15px;
+            border-radius: 8px;
+            font-size: 0.7rem;
+            font-weight: 800;
+            border: 1px solid var(--accent);
+            z-index: 2;
+        }
+
+        .card-content { padding: 2rem; }
+        .card-content h3 { margin-bottom: 0.8rem; font-size: 1.5rem; font-family: 'Orbitron'; color: #fff; }
+        .card-content p { color: var(--text-secondary); font-size: 0.95rem; line-height: 1.6; }
+
+        @keyframes cardEntrance {
+            from { opacity: 0; transform: translateY(50px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
-        .game-post {
-            padding: 15px;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            gap: 12px;
-            transition: background 0.3s ease;
-            cursor: pointer;
-            text-decoration: none;
-            color: inherit;
-            animation: slideIn 0.5s ease forwards;
+        footer { text-align: center; padding: 5rem; color: var(--text-secondary); opacity: 0.5; letter-spacing: 1px; }
+
+        @media (max-width: 768px) {
+            .hero { padding: 5rem 5% 2rem; }
+            .game-grid { padding: 0 5% 4rem; }
         }
-
-        .game-post:hover { background: rgba(255, 255, 255, 0.03); }
-
-        .avatar {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #1d9bf0, #000);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            flex-shrink: 0;
-            border: 1px solid var(--border);
-            font-family: 'Orbitron';
-        }
-
-        .post-content { flex: 1; }
-        .post-meta { display: flex; align-items: center; gap: 5px; margin-bottom: 4px; }
-        .post-author { font-weight: 700; color: var(--text-main); }
-        .post-handle { color: var(--text-dim); font-size: 0.9rem; }
-        
-        .post-text {
-            font-size: 0.95rem;
-            line-height: 1.5;
-            margin-bottom: 12px;
-        }
-
-        .post-image-container {
-            width: 100%;
-            border-radius: 16px;
-            overflow: hidden;
-            border: 1px solid var(--border);
-            margin-bottom: 12px;
-        }
-
-        .post-image {
-            width: 100%;
-            display: block;
-            transition: transform 0.5s ease;
-        }
-
-        .game-post:hover .post-image { transform: scale(1.03); }
-
-        .post-actions {
-            display: flex;
-            justify-content: space-between;
-            max-width: 425px;
-            color: var(--text-dim);
-            font-size: 0.85rem;
-        }
-
-        /* --- RIGHT SIDEBAR --- */
-        .sidebar-right {
-            flex: 1;
-            padding: 15px 30px;
-        }
-
-        .trending-box {
-            background: var(--surface);
-            border-radius: 16px;
-            padding: 15px;
-            position: sticky;
-            top: 15px;
-        }
-
-        .trending-box h3 { margin-bottom: 15px; font-size: 1.2rem; font-family: 'Orbitron'; }
-        .trend-item { margin-bottom: 15px; padding: 5px 0; }
-        .trend-label { font-size: 0.75rem; color: var(--text-dim); }
-        .trend-name { font-weight: 700; display: block; margin-top: 2px; }
-
-        /* --- MOBILE STYLES --- */
-        @media (max-width: 1000px) {
-            nav { width: 80px; align-items: center; }
-            .nav-text, .logo span { display: none; }
-            .sidebar-right { display: none; }
-        }
-
-        @media (max-width: 600px) {
-            nav {
-                position: fixed;
-                bottom: 0;
-                top: auto;
-                height: 65px;
-                width: 100%;
-                flex-direction: row;
-                justify-content: space-around;
-                background: rgba(0,0,0,0.9);
-                border-top: 1px solid var(--border);
-                border-right: none;
-                z-index: 100;
-                padding: 0;
-            }
-            .nav-item { padding: 10px; margin: 0; }
-            main { margin-bottom: 70px; border-right: none; }
-            header { text-align: center; }
-            .compose-area { display: none; } /* Hide compose on mobile to save space */
-        }
-
-        /* --- CUSTOM SCROLLBAR --- */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #000; }
-        ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
     </style>
 </head>
 <body>
 
-    <div class="app-container">
-        <nav>
-            <a href="#" class="logo">G<span>OORAC</span></a>
-            <a href="#" class="nav-item active">🏠 <span class="nav-text" style="margin-left:15px">Home</span></a>
-            <a href="#" class="nav-item">🧭 <span class="nav-text" style="margin-left:15px">Explore</span></a>
-            <a href="http://www.goorac.biz" class="nav-item" target="_blank">🏢 <span class="nav-text" style="margin-left:15px">Biz</span></a>
-        </nav>
+    <header class="hero">
+        <span class="moon-icon">🌙</span>
+        <h1>GOORAC LUNAR</h1>
+        <p>A collection of high-performance web games optimized for desktop and mobile.</p>
+        <button class="btn-lunar" id="revealBtn">Enter Arcade</button>
+    </header>
 
-        <main>
-            <header>
-                <h2>Home</h2>
-            </header>
+    <div id="games-container" style="display: none;">
+        <div class="section-title">
+            <h2>2-PLAYER BATTLES</h2>
+            <div class="line"></div>
+        </div>
+        <div class="game-grid" id="two-player-grid"></div>
 
-            <div class="compose-area">
-                <div class="avatar">S</div>
-                <div style="flex:1">
-                    <textarea class="compose-input" placeholder="What's happening in orbit?"></textarea>
-                    <div style="border-top: 1px solid var(--border); padding-top: 12px; margin-top: 10px;">
-                        <button class="lunar-btn">Mission Launch</button>
-                    </div>
-                </div>
-            </div>
-
-            <div id="game-feed">
-                </div>
-        </main>
-
-        <aside class="sidebar-right">
-            <div class="trending-box">
-                <h3>Lunar Trends</h3>
-                <div class="trend-item">
-                    <span class="trend-label">Gaming · Trending</span>
-                    <span class="trend-name">#GooracArcade</span>
-                </div>
-                <div class="trend-item">
-                    <span class="trend-label">Technology · Trending</span>
-                    <span class="trend-name">Lunar Physics Engine</span>
-                </div>
-                <div class="trend-item">
-                    <span class="trend-label">Developer</span>
-                    <span class="trend-name">@sivamanihandan</span>
-                </div>
-                <div class="trend-item">
-                    <span class="trend-label">Live Stats</span>
-                    <span class="trend-name">100% System Uptime</span>
-                </div>
-            </div>
-        </aside>
+        <div class="section-title">
+            <h2>SOLO MISSIONS</h2>
+            <div class="line"></div>
+        </div>
+        <div class="game-grid" id="solo-grid"></div>
     </div>
 
+    <footer>
+        &copy; 2026 GOORAC LUNAR | SIVAMANIHANDAN
+    </footer>
+
     <script>
-        const MY_GAMES = [
+        const GAMES = [
             { 
-                file: 'crackthecode.html', 
-                title: 'CRACK THE CODE', 
-                handle: '@lunar_logic',
-                desc: 'The moon’s security has been breached. Can you bypass the 128-bit encryption layers? 🔐✨ #CyberSecurity #Puzzle',
-                img: 'https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?w=600' 
-            },
-            { 
-                file: 'copandrobbers.html', 
                 title: 'COP VS ROBBERS', 
-                handle: '@space_pursuit',
-                desc: 'Tactical high-speed pursuit on the Crater Plains. Choose your side. 🚓🌕 #Action #PVP',
-                img: 'https://images.unsplash.com/photo-1614728263952-84ea206f99b6?w=600' 
+                type: '2-Player',
+                file: 'copandrobbers.html', 
+                desc: 'Tactical high-speed pursuit on the moon. Outsmart your opponent in a neon-lit chase.',
+                img: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=800&q=80' 
             },
             { 
-                file: 'PingPong.html', 
                 title: 'LUNAR PONG', 
-                handle: '@retro_orbit',
-                desc: 'Classic physics with a zero-gravity twist. How long can you survive the rally? 🏓☄️ #ClassicGames',
-                img: 'https://images.unsplash.com/photo-1534190239940-9ba8944ea261?w=600' 
+                type: '2-Player',
+                file: 'PingPong.html', 
+                desc: 'Classic physics with a zero-gravity twist. How long can you survive the rally?',
+                img: 'https://images.unsplash.com/photo-1534190239940-9ba8944ea261?auto=format&fit=crop&w=800&q=80' 
             },
             { 
-                file: 'Tictactoe.html', 
                 title: 'ORBITAL TIC-TAC-TOE', 
-                handle: '@tic_tac_moon',
-                desc: 'Strategy is universal. Beat the lunar AI in this reimagined classic. ❌⭕ #Strategy',
-                img: 'https://images.unsplash.com/photo-1532667449560-72a95c8d381b?w=600' 
+                type: '2-Player',
+                file: 'Tictactoe.html', 
+                desc: 'Pure strategy. Beat your rivals in this reimagined version of the universal classic.',
+                img: 'https://images.unsplash.com/photo-1611996575749-79a3a250f948?auto=format&fit=crop&w=800&q=80' 
+            },
+            { 
+                title: 'CRACK THE CODE', 
+                type: 'Solo',
+                file: 'crackthecode.html', 
+                desc: 'The moon’s security has been breached. Can you bypass the binary encryption layers?',
+                useCustomImage: true
             }
         ];
 
-        function initFeed() {
-            const feed = document.getElementById('game-feed');
-            MY_GAMES.forEach((game, index) => {
-                const post = document.createElement('a');
-                post.href = game.file;
-                post.className = 'game-post';
-                // Staggered animation delay
-                post.style.animationDelay = `${index * 0.15}s`;
-                
-                post.innerHTML = `
-                    <div class="avatar">${game.title.charAt(0)}</div>
-                    <div class="post-content">
-                        <div class="post-meta">
-                            <span class="post-author">${game.title}</span>
-                            <span class="post-handle">${game.handle} · ${index + 1}h</span>
-                        </div>
-                        <div class="post-text">${game.desc}</div>
-                        <div class="post-image-container">
-                            <img src="${game.img}" class="post-image" alt="game preview">
-                        </div>
-                        <div class="post-actions">
-                            <span>💬 ${Math.floor(Math.random() * 50)}</span>
-                            <span>🔁 ${Math.floor(Math.random() * 100)}</span>
-                            <span>❤️ ${Math.floor(Math.random() * 500)}</span>
-                            <span>📊 ${Math.floor(Math.random() * 5)}k</span>
-                        </div>
-                    </div>
-                `;
-                feed.appendChild(post);
-            });
+        const revealBtn = document.getElementById('revealBtn');
+        const container = document.getElementById('games-container');
+        const p2Grid = document.getElementById('two-player-grid');
+        const soloGrid = document.getElementById('solo-grid');
+
+        function createCard(game, index) {
+            const card = document.createElement('a');
+            card.href = game.file;
+            card.className = 'game-card';
+            card.style.animationDelay = `${index * 0.1}s`;
+            
+            const imageHtml = game.useCustomImage 
+                ? `<div class="numbers-bg"></div>` 
+                : `<div class="card-img-wrapper"><img src="${game.img}" class="card-img" alt="${game.title}"></div>`;
+
+            card.innerHTML = `
+                <div class="tag">${game.type}</div>
+                ${imageHtml}
+                <div class="card-content">
+                    <h3>${game.title}</h3>
+                    <p>${game.desc}</p>
+                </div>
+            `;
+            return card;
         }
 
-        window.onload = initFeed;
+        revealBtn.addEventListener('click', () => {
+            revealBtn.style.opacity = '0';
+            setTimeout(() => revealBtn.style.display = 'none', 400);
+            
+            container.style.display = 'block';
+
+            GAMES.forEach((game, i) => {
+                const card = createCard(game, i);
+                if(game.type === '2-Player') {
+                    p2Grid.appendChild(card);
+                } else {
+                    soloGrid.appendChild(card);
+                }
+                setTimeout(() => card.classList.add('show'), 100);
+            });
+
+            window.scrollTo({ top: container.offsetTop - 50, behavior: 'smooth' });
+        });
     </script>
 </body>
 </html>
