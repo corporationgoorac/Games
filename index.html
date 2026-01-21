@@ -3,345 +3,397 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sivamanihandan's Game Arcade</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <title>Goorac Arcade | Sivamanihandan</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #00f2ff;
-            --secondary: #7000ff;
-            --bg: #050507;
-            --card-bg: rgba(22, 22, 26, 0.8);
-            --accent: #ff00c1;
+            --primary: #e1e1e1; /* Moonlight Silver */
+            --secondary: #30336b; /* Deep Space Indigo */
+            --accent: #ffffff;
+            --bg: #05050a; /* True Space Black */
+            --glass: rgba(255, 255, 255, 0.05);
+            --surface: rgba(255, 255, 255, 0.02);
         }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; scroll-behavior: smooth; }
 
         body {
-            margin: 0;
             background-color: var(--bg);
             color: white;
-            font-family: 'Poppins', sans-serif;
+            font-family: 'Rajdhani', sans-serif;
             overflow-x: hidden;
-            min-height: 100vh;
         }
 
-        /* NEW FEATURE: Floating Particles Background */
+        /* MOON THEME TOP NAVIGATION */
+        .goorac-nav {
+            position: fixed;
+            top: 0; width: 100%;
+            padding: 15px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(5, 5, 10, 0.8);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 1000;
+        }
+        .nav-logo { font-family: 'Orbitron'; color: #fff; text-decoration: none; font-weight: 700; letter-spacing: 4px; font-size: 1.1rem; }
+        .nav-logo span { color: var(--primary); opacity: 0.7; }
+        
+        .nav-links { display: flex; gap: 25px; align-items: center; }
+        .nav-link-biz { 
+            color: #000; 
+            text-decoration: none; 
+            font-size: 0.8rem; 
+            font-weight: 700;
+            padding: 8px 20px; 
+            border-radius: 2px; 
+            background: var(--primary);
+            transition: 0.4s;
+            letter-spacing: 1px;
+        }
+        .nav-link-biz:hover { background: #fff; box-shadow: 0 0 20px rgba(255,255,255,0.4); }
+
+        /* LUNAR STATUS TICKER */
+        .status-ticker {
+            position: absolute;
+            top: 60px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.03);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            padding: 6px 0;
+            overflow: hidden;
+            white-space: nowrap;
+            z-index: 999;
+        }
+        .ticker-wrap { display: inline-block; animation: ticker 40s linear infinite; }
+        .ticker-item { display: inline-block; padding: 0 40px; font-size: 0.7rem; color: #666; letter-spacing: 2px; text-transform: uppercase; }
+
+        @keyframes ticker { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+
+        /* Background Starfield */
         #particles-js {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
             z-index: -1;
-            background: linear-gradient(45deg, #050507 0%, #0d0d1a 100%);
+            background: radial-gradient(circle at center, #111119 0%, #05050a 100%);
         }
 
-        header {
-            text-align: center;
-            padding: 80px 20px 40px;
-            animation: fadeInDown 1.2s cubic-bezier(0.22, 1, 0.36, 1);
-        }
-
-        h1 { 
-            font-family: 'Orbitron', sans-serif;
-            font-size: clamp(2rem, 8vw, 4rem); 
-            margin-bottom: 10px; 
-            color: var(--primary); 
-            text-shadow: 0 0 20px rgba(0,242,255,0.6);
-            letter-spacing: 5px;
-            text-transform: uppercase;
-        }
-
-        .author { 
-            opacity: 0.8; 
-            font-weight: 300; 
-            letter-spacing: 4px; 
-            color: var(--accent);
-            text-transform: uppercase;
-            font-size: 0.9rem;
-        }
-
-        /* NEW FEATURE: Live Search Bar and Feature Container */
-        .controls-container {
-            max-width: 600px;
-            margin: 0 auto 40px;
+        /* --- LUNAR HERO SECTION --- */
+        .hero {
+            height: 100vh;
             display: flex;
-            gap: 15px;
-            padding: 0 20px;
-            animation: fadeIn 2s ease;
-        }
-
-        .search-container {
-            flex-grow: 1;
-        }
-
-        #gameSearch {
-            width: 100%;
-            padding: 12px 25px;
-            border-radius: 30px;
-            border: 1px solid rgba(0, 242, 255, 0.3);
-            background: rgba(255, 255, 255, 0.05);
-            color: white;
-            backdrop-filter: blur(10px);
-            outline: none;
-            transition: 0.3s;
-        }
-
-        #gameSearch:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 15px rgba(0, 242, 255, 0.3);
-        }
-
-        /* MY OWN FEATURE: Random Game Button */
-        .random-btn {
-            background: linear-gradient(45deg, var(--secondary), var(--accent));
-            border: none;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 30px;
-            cursor: pointer;
-            font-family: 'Orbitron', sans-serif;
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            transition: 0.3s;
-            box-shadow: 0 0 15px rgba(112, 0, 255, 0.4);
-        }
-
-        .random-btn:hover {
-            transform: translateY(-3px) scale(1.05);
-            box-shadow: 0 0 25px var(--accent);
-        }
-
-        /* Stats Badge */
-        .stats-badge {
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
             text-align: center;
-            margin-bottom: 20px;
-            font-family: 'Orbitron';
+        }
+
+        .hero-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(3rem, 15vw, 7rem);
+            font-weight: 900;
+            letter-spacing: 25px;
+            text-transform: uppercase;
+            color: #fff;
+            text-shadow: 0 0 30px rgba(255,255,255,0.2);
+            margin-bottom: 10px;
+        }
+
+        .hero-subtitle {
+            font-size: 0.9rem;
+            letter-spacing: 12px;
             color: var(--primary);
+            text-transform: uppercase;
+            margin-bottom: 50px;
+            opacity: 0.6;
+        }
+
+        .cta-button {
+            padding: 18px 60px;
+            font-family: 'Orbitron', sans-serif;
             font-size: 0.8rem;
-            letter-spacing: 2px;
+            font-weight: 700;
+            color: #fff;
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 0;
+            cursor: pointer;
+            transition: 0.5s;
+            letter-spacing: 4px;
+        }
+
+        .cta-button:hover {
+            background: rgba(255,255,255,1);
+            color: #000;
+            box-shadow: 0 0 50px rgba(255,255,255,0.2);
+        }
+
+        /* --- ARCADE SECTION --- */
+        .arcade-section {
+            padding: 150px 20px;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 100px;
+        }
+
+        .section-header h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.8rem;
+            letter-spacing: 15px;
+            color: white;
+            text-transform: uppercase;
+            opacity: 0.9;
+        }
+
+        .developer-tag {
+            color: #444;
+            font-size: 0.75rem;
+            letter-spacing: 6px;
+            margin-top: 15px;
+            text-transform: uppercase;
         }
 
         .game-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 35px;
-            padding: 20px 40px 80px;
-            max-width: 1300px;
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+            gap: 60px;
+            max-width: 1400px;
             margin: 0 auto;
         }
 
-        /* Enhanced Glassmorphism Card */
+        /* --- MOON CARD UI --- */
         .game-card {
-            background: var(--card-bg);
-            border-radius: 20px;
-            style: none;
-            overflow: hidden;
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            text-decoration: none;
-            color: white;
-            border: 1px solid rgba(255,255,255,0.1);
-            backdrop-filter: blur(15px);
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: 0.6s cubic-bezier(0.2, 1, 0.2, 1);
             position: relative;
-            display: block;
+            opacity: 0;
+            transform: translateY(40px);
         }
 
-        /* NEW FEATURE: 2-Player Badge */
-        .badge-2p {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            background: var(--accent);
-            padding: 4px 12px;
-            border-radius: 10px;
-            font-family: 'Orbitron';
-            font-size: 0.6rem;
-            z-index: 2;
-            box-shadow: 0 0 10px var(--accent);
-        }
-
-        .game-card::before {
-            content: '';
-            position: absolute;
-            top: 0; left: -100%;
-            width: 50%; height: 100%;
-            background: linear-gradient(to right, transparent, rgba(255,255,255,0.1), transparent);
-            transition: 0.5s;
-        }
-
-        .game-card:hover::before { left: 150%; }
+        .game-card.reveal { opacity: 1; transform: translateY(0); }
 
         .game-card:hover {
-            transform: scale(1.05);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 20px rgba(112, 0, 255, 0.3);
-            border-color: var(--primary);
+            transform: translateY(-15px);
+            background: rgba(255,255,255,0.05);
+            border-color: rgba(255,255,255,0.3);
+            box-shadow: 0 40px 80px rgba(0,0,0,0.8);
         }
 
-        .img-container {
+        .card-img-box {
             width: 100%;
-            height: 200px;
+            height: 250px;
             overflow: hidden;
-            position: relative;
+            filter: grayscale(100%);
+            transition: 0.6s;
         }
 
-        .game-img {
-            width: 100%;
-            height: 100%;
-            background: #1a1a1a;
+        .game-card:hover .card-img-box { filter: grayscale(0%); }
+
+        .card-img-box img {
+            width: 100%; height: 100%;
             object-fit: cover;
-            transition: 0.5s;
+            opacity: 0.5;
+            transition: 1s;
         }
 
-        .game-card:hover .game-img { transform: scale(1.1); filter: brightness(1.2); }
+        .game-card:hover .card-img-box img { opacity: 0.8; transform: scale(1.1); }
 
-        .game-info { 
-            padding: 25px; 
-            text-align: center;
-            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
-        }
+        .card-content { padding: 45px; border-top: 1px solid rgba(255,255,255,0.03); }
 
-        .game-name { 
-            font-weight: 600; 
-            text-transform: uppercase; 
-            letter-spacing: 1px;
+        .game-title {
+            font-family: 'Orbitron', sans-serif;
             font-size: 1.1rem;
-        }
-
-        .vs-tag {
-            color: var(--primary);
-            font-size: 0.7rem;
-            font-family: 'Orbitron';
-            display: block;
-            margin-top: 8px;
-            opacity: 0.7;
-        }
-
-        /* Glow effect on load */
-        @keyframes fadeInDown {
-            from { opacity: 0; transform: translateY(-50px); filter: blur(10px); }
-            to { opacity: 1; transform: translateY(0); filter: blur(0); }
-        }
-
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(50px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-        #loading { 
-            text-align: center; 
-            font-size: 1.2rem; 
-            margin-top: 50px; 
-            color: var(--primary);
-            text-transform: uppercase;
+            color: #fff;
+            margin-bottom: 15px;
             letter-spacing: 3px;
-            animation: pulse 1.5s infinite;
         }
 
-        @keyframes pulse { 0% { opacity: 0.4; } 50% { opacity: 1; } 100% { opacity: 0.4; } }
+        .game-desc {
+            color: #777;
+            font-size: 0.85rem;
+            line-height: 2;
+            margin-bottom: 35px;
+            height: 50px;
+        }
 
-        /* Scrollbar Styling */
-        ::-webkit-scrollbar { width: 8px; }
+        .play-btn {
+            display: inline-block;
+            width: 100%;
+            padding: 16px;
+            text-align: center;
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #fff;
+            text-decoration: none;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            transition: 0.4s;
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            letter-spacing: 3px;
+        }
+
+        .play-btn:hover {
+            background: #fff;
+            color: #000;
+        }
+
+        .badge-2p {
+            position: absolute;
+            top: 20px; right: 20px;
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #fff;
+            padding: 5px 15px;
+            font-size: 0.6rem;
+            z-index: 2;
+            letter-spacing: 2px;
+            background: rgba(0,0,0,0.5);
+        }
+
+        /* Custom Moon Scrollbar */
+        ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: var(--bg); }
-        ::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: #222; }
+        ::-webkit-scrollbar-thumb:hover { background: #444; }
+
+        footer { 
+            padding: 100px 40px; 
+            text-align: center; 
+            border-top: 1px solid rgba(255,255,255,0.02);
+        }
+        .footer-logo { font-family: 'Orbitron'; font-size: 1.2rem; color: #fff; margin-bottom: 20px; display: block; text-decoration: none; letter-spacing: 8px; opacity: 0.5; }
+        .footer-text { color: #333; font-size: 0.7rem; letter-spacing: 4px; text-transform: uppercase; }
+
     </style>
 </head>
 <body>
 
-    <div id="particles-js"></div>
-
-    <header>
-        <h1>ARCADE WORLD</h1>
-        <p class="author">Developed by Sivamanihandan</p>
-    </header>
-
-    <div class="stats-badge" id="statsBadge">SCANNING SYSTEMS...</div>
-
-    <div class="controls-container">
-        <div class="search-container">
-            <input type="text" id="gameSearch" placeholder="Find a game..." onkeyup="filterGames()">
+    <nav class="goorac-nav">
+        <a href="#" class="nav-logo">GOORAC<span>LUNAR</span></a>
+        <div class="nav-links">
+            <div id="sys-clock" style="font-family: Orbitron; color: #444; font-size: 0.7rem; letter-spacing: 2px;">00:00:00</div>
+            <a href="http://www.goorac.biz" target="_blank" class="nav-link-biz">GOORAC.BIZ</a>
         </div>
-        <button class="random-btn" onclick="playRandom()">Random Play</button>
+    </nav>
+
+    <div class="status-ticker">
+        <div class="ticker-wrap">
+            <div class="ticker-item">● LUNAR PHASE: FULL MOON</div>
+            <div class="ticker-item">● SPACE BRIDGE: ESTABLISHED</div>
+            <div class="ticker-item">● SIVAMANIHANDAN ARCHIVE ACCESS GRANTED</div>
+            <div class="ticker-item">● SERVER LATENCY: 12MS (LUNAR ORBIT)</div>
+            <div class="ticker-item">● WWW.GOORAC.BIZ // MAIN-FRAME ONLINE</div>
+        </div>
     </div>
 
-    <div id="loading">Initializing Systems...</div>
-    <div class="game-grid" id="gameGrid"></div>
+    <div id="particles-js"></div>
+
+    <section class="hero">
+        <h1 class="hero-title">GOORAC</h1>
+        <p class="hero-subtitle">Lunar Edition Arcade</p>
+        <button class="cta-button" onclick="scrollToGames()">ENTER THE VOID</button>
+    </section>
+
+    <section class="arcade-section" id="arcadeGrid">
+        <div class="section-header">
+            <h2>LUNAR COLLECTION</h2>
+            <p class="developer-tag">Designed by Sivamanihandan</p>
+        </div>
+
+        <div class="game-grid" id="gameGrid"></div>
+    </section>
+
+    <footer>
+        <a href="http://www.goorac.biz" class="footer-logo">GOORAC</a>
+        <p class="footer-text">LUNAR SYSTEMS &copy; 2024</p>
+    </footer>
 
     <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
     <script>
-        // REPLACE THESE WITH YOUR ACTUAL INFO
-        const USERNAME = "YOUR_GITHUB_USERNAME"; 
-        const REPO = "YOUR_REPO_NAME";           
-        let gameLinks = [];
+        const MY_GAMES = [
+            { 
+                file: 'crackthecode.html', 
+                title: 'CRACK THE CODE', 
+                desc: 'Bypass lunar encryption systems using advanced logic patterns.',
+                img: 'https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?w=600' 
+            },
+            { 
+                file: 'copandrobbers.html', 
+                title: 'COP VS ROBBERS', 
+                desc: 'Tactical pursuit across the lunar surface. High stakes 1v1.',
+                img: 'https://images.unsplash.com/photo-1614728263952-84ea206f99b6?w=600' 
+            },
+            { 
+                file: 'PingPong.html', 
+                title: 'LUNAR PONG', 
+                desc: 'Zero-gravity physics challenge. Traditional skill, modern space.',
+                img: 'https://images.unsplash.com/photo-1534190239940-9ba8944ea261?w=600' 
+            },
+            { 
+                file: 'Tictactoe.html', 
+                title: 'ORBITAL TIC-TAC-TOE', 
+                desc: 'The essential tactical game, reimagined for the lunar age.',
+                img: 'https://images.unsplash.com/photo-1532667449560-72a95c8d381b?w=600' 
+            }
+        ];
 
-        // Initialize Particles
+        function scrollToGames() {
+            document.getElementById('arcadeGrid').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function initArcade() {
+            const grid = document.getElementById('gameGrid');
+            MY_GAMES.forEach((game, index) => {
+                const card = document.createElement('div');
+                card.className = 'game-card';
+                card.innerHTML = `
+                    <div class="badge-2p">LUNAR PVP</div>
+                    <div class="card-img-box">
+                        <img src="${game.img}" alt="${game.title}">
+                    </div>
+                    <div class="card-content">
+                        <h3 class="game-title">${game.title}</h3>
+                        <p class="game-desc">${game.desc}</p>
+                        <a href="${game.file}" class="play-btn">LAUNCH MISSION</a>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+            
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('reveal');
+                    }
+                });
+            }, { threshold: 0.1 });
+
+            document.querySelectorAll('.game-card').forEach(card => observer.observe(card));
+        }
+
+        setInterval(() => {
+            const now = new Date();
+            document.getElementById('sys-clock').innerText = now.toLocaleTimeString();
+        }, 1000);
+
+        // STARFIELD PARTICLES
         particlesJS("particles-js", {
             "particles": {
-                "number": { "value": 80 },
-                "color": { "value": "#00f2ff" },
+                "number": { "value": 150 },
+                "color": { "value": "#ffffff" },
                 "shape": { "type": "circle" },
-                "opacity": { "value": 0.5 },
-                "size": { "value": 3 },
-                "line_linked": { "enable": true, "distance": 150, "color": "#00f2ff", "opacity": 0.2, "width": 1 },
-                "move": { "enable": true, "speed": 2 }
+                "opacity": { "value": 0.5, "random": true },
+                "size": { "value": 1.5, "random": true },
+                "line_linked": { "enable": false },
+                "move": { "enable": true, "speed": 0.2, "direction": "none", "random": true }
             }
         });
 
-        async function fetchGames() {
-            try {
-                const response = await fetch(`https://api.github.com/repos/${USERNAME}/${REPO}/contents/`);
-                const files = await response.json();
-                const grid = document.getElementById('gameGrid');
-                document.getElementById('loading').style.display = 'none';
-
-                let count = 0;
-                files.forEach((file, index) => {
-                    if (file.name.endsWith('.html') && file.name !== 'index.html') {
-                        count++;
-                        gameLinks.push(file.name);
-                        const gameName = file.name.replace('.html', '').replace(/[-_]/g, ' ');
-                        const screenshotUrl = `https://s.wordpress.com/mshots/v1/https://${USERNAME}.github.io/${REPO}/${file.name}?w=600`;
-
-                        const card = document.createElement('a');
-                        card.href = file.name;
-                        card.className = 'game-card';
-                        card.setAttribute('data-name', gameName.toLowerCase());
-                        card.style.animation = `fadeInUp 0.6s ease backwards ${index * 0.1}s`;
-                        
-                        card.innerHTML = `
-                            <div class="badge-2p">2 PLAYER</div>
-                            <div class="img-container">
-                                <img src="${screenshotUrl}" class="game-img" alt="${gameName}" onerror="this.src='https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&q=80&w=400'">
-                            </div>
-                            <div class="game-info">
-                                <div class="game-name">${gameName}</div>
-                                <span class="vs-tag">READY FOR COMPETITION</span>
-                            </div>
-                        `;
-                        grid.appendChild(card);
-                    }
-                });
-                document.getElementById('statsBadge').innerText = `TOTAL GAMES LOADED: ${count}`;
-            } catch (error) {
-                document.getElementById('loading').innerText = "System Error: Check Connection";
-            }
-        }
-
-        function filterGames() {
-            const input = document.getElementById('gameSearch').value.toLowerCase();
-            const cards = document.getElementsByClassName('game-card');
-            
-            Array.from(cards).forEach(card => {
-                const name = card.getAttribute('data-name');
-                card.style.display = name.includes(input) ? "block" : "none";
-            });
-        }
-
-        // New Feature: Play a random game
-        function playRandom() {
-            if(gameLinks.length > 0) {
-                const random = gameLinks[Math.floor(Math.random() * gameLinks.length)];
-                window.location.href = random;
-            }
-        }
-
-        fetchGames();
+        initArcade();
     </script>
 </body>
 </html>
