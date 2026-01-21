@@ -213,7 +213,7 @@
         </div>
         <div class="game-grid" id="two-player-grid"></div>
 
-        <div class="section-title">
+        <div class="section-title" id="solo-title" style="display: none;">
             <h2>SOLO MISSIONS</h2>
             <div class="line"></div>
         </div>
@@ -249,9 +249,9 @@
             },
             { 
                 title: 'CRACK THE CODE', 
-                type: 'Solo',
+                type: '2-Player',
                 file: 'crackthecode.html', 
-                desc: 'The moon’s security has been breached. Can you bypass the binary encryption layers?',
+                desc: 'A competitive decryption race. Who can bypass the moon’s binary encryption first?',
                 useCustomImage: true
             }
         ];
@@ -260,6 +260,7 @@
         const container = document.getElementById('games-container');
         const p2Grid = document.getElementById('two-player-grid');
         const soloGrid = document.getElementById('solo-grid');
+        const soloTitle = document.getElementById('solo-title');
 
         function createCard(game, index) {
             const card = document.createElement('a');
@@ -288,15 +289,22 @@
             
             container.style.display = 'block';
 
+            let hasSolo = false;
+
             GAMES.forEach((game, i) => {
                 const card = createCard(game, i);
                 if(game.type === '2-Player') {
                     p2Grid.appendChild(card);
                 } else {
                     soloGrid.appendChild(card);
+                    hasSolo = true;
                 }
                 setTimeout(() => card.classList.add('show'), 100);
             });
+
+            if(hasSolo) {
+                soloTitle.style.display = 'flex';
+            }
 
             window.scrollTo({ top: container.offsetTop - 50, behavior: 'smooth' });
         });
