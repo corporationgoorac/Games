@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Auction Clash</title>
+    <!-- Using Realtime Database to utilize onDisconnect().remove() for automatic session clearing -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --blue: #3b82f6;
+            --orange: #f97316;
+            --text: #f8fafc;
+            --border: #334155;
+            --danger: #ef4444;
+        }
+        * { box-sizing: border-box; font-family: 'Poppins', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background: var(--bg); color: var(--text); margin: 0; display: flex; flex-direction: column; height: 100vh; height: 100dvh; overflow: hidden; }
+        
+        .hidden { display: none !important; }
+        
+        /* Overlays */
+        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 1000; padding: 20px; }
+        .card { background: var(--surface); border: 1px solid var(--border); border-radius: 24px; padding: 30px; width: 100%; max-width: 400px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
+        .card h2 { margin-top: 0; font-size: 24px; }
+        
+        input, select { width: 100%; background: #0f172a; border: 2px solid var(--border); color: #fff; padding: 15px; border-radius: 12px; margin-bottom: 15px; font-size: 16px; outline: none; }
+        input:focus { border-color: var(--blue); }
+        
+        .btn { width: 100%; padding: 15px; border-radius: 12px; border: none; font-weight: 800; font-size: 16px; cursor: pointer; transition: 0.2s; background: #fff; color: #000; text-transform: uppercase; }
+        .btn:active { transform: scale(0.96); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        /* Main Layout */
+        #game-screen { flex: 1; display: flex; flex-direction: column; position: relative; }
+        
+        /* Top: Stage */
+        .stage { flex: 0.8; display: flex; flex-direction: column; justify-content: center; align-items: center; background: radial-gradient(circle at top, #2d3748, #0f172a); border-bottom: 2px solid var(--border); position: relative; padding: 20px; }
+        .auction-card { background: #000; padding: 20px 40px; border-radius: 20px; border: 1px solid #fff; box-shadow: 0 0 30px rgba(255,255,255,0.1); text-align: center; }
+        .item-icon { font-size: 40px; margin-bottom: 10px; }
+        #item-name { font-size: 22px; font-weight: 800; margin: 0; text-transform: uppercase; letter-spacing: 1px; }
+        #item-score { font-size: 14px; color: #a1a1aa; margin-top: 5px; }
+        #current-bid-display { font-size: 40px; font-weight: 800; color: #fff; margin-top: 15px; text-shadow: 0 0 10px rgba(255,255,255,0.5); }
+        
+        /* Middle: Arena */
+        .arena { flex: 1.2; display: flex; }
+        .player-zone { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-bottom: 40px; position: relative; }
+        .p-blue { background: linear-gradient(to top, rgba(59,130,246,0.1), transparent); border-right: 1px solid var(--border); }
+        .p-orange { background: linear-gradient(to top, rgba(249,115,22,0.1), transparent); }
+        
+        .dash { position: absolute; top: 15px; text-align: center; width: 100%; }
+        .dash-name { font-size: 14px; font-weight: 800; text-transform: uppercase; margin-bottom: 5px; }
+        .p-blue .dash-name { color: var(--blue); }
+        .p-orange .dash-name { color: var(--orange); }
+        .dash-stats { font-size: 12px; color: #94a3b8; line-height: 1.4; }
+        .dash-funds { font-weight: 800; font-size: 18px; color: #fff; }
+        
+        /* Avatars & Paddles */
+        .avatar-wrap { position: relative; width: 80px; height: 100px; display: flex; justify-content: center; }
+        .avatar-icon { font-size: 70px; z-index: 2; position: absolute; bottom: 0; }
+        .paddle { position: absolute; bottom: 30px; right: -20px; width: 40px; height: 60px; background: #fff; color: #000; display: flex; justify-content: center; align-items: flex-start; padding-top: 10px; font-weight: 800; font-size: 20px; border-radius: 8px; z-index: 3; transform-origin: bottom left; transform: rotate(90deg); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); opacity: 0; border: 2px solid #000; box-shadow: 2px 2px 10px rgba(0,0,0,0.5); }
+        .paddle::after { content: ''; position: absolute; bottom: -30px; left: 15px; width: 6px; height: 30px; background: #8b4513; }
+        .paddle.raised { transform: rotate(15deg); opacity: 1; }
+        .p-orange .paddle { left: -20px; right: auto; transform-origin: bottom right; transform: rotate(-90deg); }
+        .p-orange .paddle.raised { transform: rotate(-15deg); opacity: 1; }
+
+        /* Bottom: Controls */
+        .controls { background: var(--surface); border-top: 1px solid var(--border); padding: 15px; display: flex; flex-direction: column; gap: 10px; padding-bottom: calc(15px + env(safe-area-inset-bottom)); }
+        .bid-row { display: flex; gap: 10px; }
+        .controls input { margin: 0; flex: 1; font-size: 24px; text-align: center; font-weight: 800; }
+        .btn-bid { background: var(--blue); color: #fff; flex: 1; }
+        .btn-leave { background: var(--danger); color: #fff; flex: 1; }
+        
+        #turn-indicator { text-align: center; font-size: 12px; font-weight: 800; letter-spacing: 2px; padding: 8px; border-radius: 20px; background: #000; margin-bottom: 5px; transition: 0.3s; }
+        
+        /* Inventory Drawer */
+        .inventory-btn { background: transparent; border: 1px solid var(--border); color: #94a3b8; padding: 8px; border-radius: 8px; font-size: 12px; margin-top: 5px; }
+        #inventory-panel { position: absolute; bottom: 0; left: 0; right: 0; background: var(--surface); height: 60vh; transform: translateY(100%); transition: 0.3s; z-index: 100; border-top-left-radius: 24px; border-top-right-radius: 24px; padding: 20px; box-shadow: 0 -10px 30px rgba(0,0,0,0.8); overflow-y: auto; }
+        #inventory-panel.open { transform: translateY(0); }
+        .inv-list { margin-top: 15px; font-size: 14px; }
+        .inv-list div { padding: 10px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; }
+        
+        .draft-list { max-height: 200px; overflow-y: auto; text-align: left; margin-bottom: 15px; }
+        .draft-item { padding: 10px; background: #000; border-radius: 8px; margin-bottom: 5px; display: flex; justify-content: space-between; font-size: 14px; }
+
+        .link-box { font-family: monospace; background: #000; padding: 12px; border-radius: 8px; margin: 15px 0; border: 1px dashed #fff; word-break: break-all; }
+    </style>
+</head>
+<body>
+
+<!-- Overlays -->
+<div id="setup-screen" class="overlay">
+    <div class="card">
+        <h2>Enter Auction</h2>
+        <!-- Default name pre-filled dynamically based on integrated profile data context -->
+        <input type="text" id="player-name" placeholder="Your Name" value="சிவ மணிகண்டன்">
+        <select id="player-gender">
+            <option value="M">Male</option>
+            <option value="F">Female</option>
+        </select>
+        <button class="btn" onclick="initPlayer()">Continue</button>
+    </div>
+</div>
+
+<div id="share-screen" class="overlay hidden">
+    <div class="card">
+        <h2>Invite Opponent</h2>
+        <p style="font-size:14px; color:#94a3b8;">Send this link to start the bidding war:</p>
+        <div class="link-box" id="invite-link">...</div>
+        <button class="btn" onclick="copyLink()">Copy Link</button>
+        <p style="font-size:12px; margin-top:15px; color:#ef4444;">Waiting for opponent to connect...</p>
+    </div>
+</div>
+
+<div id="draft-screen" class="overlay hidden">
+    <div class="card">
+        <h2>Draft Celebrities</h2>
+        <p style="font-size:12px; color:#94a3b8;">Enter 5 items/celebrities for the auction.</p>
+        <div style="display:flex; gap:10px; margin-bottom:15px;">
+            <input type="text" id="draft-input" placeholder="e.g. Elon Musk" style="margin:0;">
+            <button class="btn" style="width:auto; padding:0 20px;" onclick="addDraftItem()">ADD</button>
+        </div>
+        <div class="draft-list" id="my-drafts"></div>
+        <button class="btn" id="btn-submit-draft" onclick="submitDraft()" disabled>Submit (0/5)</button>
+        <p id="draft-wait" class="hidden" style="font-size:12px; color:#ef4444; margin-top:10px;">Waiting for opponent's draft...</p>
+    </div>
+</div>
+
+<div id="end-screen" class="overlay hidden">
+    <div class="card">
+        <h1 id="win-title" style="font-size:36px; margin:0;">...</h1>
+        <p id="win-desc" style="color:#94a3b8; margin:15px 0 25px;"></p>
+        <button class="btn" onclick="location.href = location.pathname">Leave Room</button>
+    </div>
+</div>
+
+<!-- Main Game UI -->
+<div id="game-screen">
+    <div class="stage">
+        <div id="item-counter" style="position:absolute; top:15px; left:15px; font-size:12px; font-weight:800; color:#94a3b8;">ITEM 1/10</div>
+        <div class="auction-card">
+            <div class="item-icon">💎</div>
+            <div id="item-name">Waiting...</div>
+            <div id="item-score">Points: ???</div>
+        </div>
+        <div id="current-bid-display">₹ 0</div>
+    </div>
+    
+    <div class="arena">
+        <div class="player-zone p-blue">
+            <div class="dash">
+                <div class="dash-name" id="name-me">ME</div>
+                <div class="dash-stats">
+                    <span style="color:#94a3b8;">Funds:</span> <span class="dash-funds" id="funds-me">₹50</span><br>
+                    Score: <span id="score-me">0</span>
+                </div>
+            </div>
+            <div class="avatar-wrap">
+                <div class="avatar-icon" id="ava-me">🧑</div>
+                <div class="paddle" id="pad-me"><span>0</span></div>
+            </div>
+        </div>
+        
+        <div class="player-zone p-orange">
+            <div class="dash">
+                <div class="dash-name" id="name-opp">OPPONENT</div>
+                <div class="dash-stats">
+                    <span style="color:#94a3b8;">Funds:</span> <span class="dash-funds" id="funds-opp">₹50</span><br>
+                    Score: <span id="score-opp">0</span>
+                </div>
+            </div>
+            <div class="avatar-wrap">
+                <div class="avatar-icon" id="ava-opp">🧑</div>
+                <div class="paddle" id="pad-opp"><span>0</span></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="controls">
+        <div id="turn-indicator">WAITING FOR GAME TO START</div>
+        <div class="bid-row">
+            <input type="number" id="bid-input" inputmode="numeric" placeholder="₹">
+            <button class="btn btn-bid" id="btn-bid" onclick="placeBid()">BID</button>
+            <button class="btn btn-leave" id="btn-leave" onclick="leaveBid()">LEAVE</button>
+        </div>
+        <button class="inventory-btn" onclick="toggleInventory()">View Purchased Items ▼</button>
+    </div>
+    
+    <div id="inventory-panel">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h3 style="margin:0;">Auction Ledger</h3>
+            <button class="btn" style="width:auto; padding:5px 15px; font-size:12px;" onclick="toggleInventory()">Close</button>
+        </div>
+        <div style="display:flex; gap:20px;">
+            <div style="flex:1;">
+                <h4 style="color:var(--blue)">My Items</h4>
+                <div class="inv-list" id="inv-me"></div>
+            </div>
+            <div style="flex:1;">
+                <h4 style="color:var(--orange)">Opponent's Items</h4>
+                <div class="inv-list" id="inv-opp"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+/* Audio Synthesizer (Zero External Dependencies) */
+const AudioContext = window.AudioContext || window.webkitAudioContext;
+let audioCtx;
+function initAudio() { if(!audioCtx) audioCtx = new AudioContext(); }
+function playSound(type) {
+    if(!audioCtx || audioCtx.state === 'suspended') return;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    const now = audioCtx.currentTime;
+    
+    if(type === 'bid') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(400, now);
+        osc.frequency.exponentialRampToValueAtTime(800, now + 0.1);
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(1, now + 0.05);
+        gain.gain.linearRampToValueAtTime(0, now + 0.2);
+        osc.start(now); osc.stop(now + 0.2);
+    } else if (type === 'leave') {
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(150, now);
+        osc.frequency.exponentialRampToValueAtTime(50, now + 0.2);
+        gain.gain.setValueAtTime(0.5, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+        osc.start(now); osc.stop(now + 0.2);
+    } else if (type === 'sold') {
+        const bufferSize = audioCtx.sampleRate * 0.1;
+        const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+        const noise = audioCtx.createBufferSource();
+        noise.buffer = buffer;
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = 'lowpass'; filter.frequency.value = 800;
+        noise.connect(filter); filter.connect(gain);
+        gain.gain.setValueAtTime(1, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+        noise.start(now);
+    } else if (type === 'error') {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(150, now);
+        gain.gain.setValueAtTime(0.5, now);
+        gain.gain.linearRampToValueAtTime(0, now + 0.3);
+        osc.start(now); osc.stop(now + 0.3);
+    }
+}
+
+/* Firebase Configuration (Using provided Realtime DB config for onDisconnect capability) */
+const firebaseConfig = {
+    apiKey: "AIzaSyCkpSNJP6-puaQsB9H5ZX_pp9alrbR58lI",
+    authDomain: "pinga-8bba9.firebaseapp.com",
+    databaseURL: "https://pinga-8bba9-default-rtdb.firebaseio.com",
+    projectId: "pinga-8bba9",
+    storageBucket: "pinga-8bba9.firebasestorage.app",
+    messagingSenderId: "751196556015",
+    appId: "1:751196556015:web:504f02ccc79778c41da91a"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+/* Game State */
+let roomId, myRole, oppRole;
+let roomRef;
+let myDrafts = [];
+let localState = {};
+let previousTurnId = null; 
+let previousBidCount = 0;
+
+function qs(sel) { return document.querySelector(sel); }
+
+function initPlayer() {
+    initAudio();
+    if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+
+    const name = qs('#player-name').value.trim() || 'Player';
+    const gender = qs('#player-gender').value;
+    
+    qs('#setup-screen').classList.add('hidden');
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    const mId = urlParams.get('m');
+    
+    if (mId) {
+        roomId = mId;
+        myRole = 'p2';
+        oppRole = 'p1';
+        roomRef = db.ref('auctions/' + roomId);
+        
+        roomRef.once('value', snap => {
+            if(!snap.exists()) {
+                alert("Room closed or doesn't exist.");
+                window.location.href = window.location.pathname;
+                return;
+            }
+            roomRef.child('players/p2').set({ name, gender, funds: 50, score: 0 });
+            qs('#draft-screen').classList.remove('hidden');
+        });
+    } else {
+        roomId = Math.random().toString(36).substring(2, 7);
+        myRole = 'p1';
+        oppRole = 'p2';
+        roomRef = db.ref('auctions/' + roomId);
+        
+        // Critical: Clear DB room automatically on disconnect to keep DB clean as requested
+        roomRef.onDisconnect().remove();
+        
+        roomRef.set({
+            phase: 'waiting',
+            players: { p1: { name, gender, funds: 50, score: 0 } },
+            auction: { index: 0, currentBid: 0, highestBidder: null, turn: 'p1', bidCount: 0 }
+        });
+        
+        qs('#invite-link').innerText = window.location.origin + window.location.pathname + "?m=" + roomId;
+        qs('#share-screen').classList.remove('hidden');
+    }
+    
+    listenToRoom();
+}
+
+function copyLink() {
+    navigator.clipboard.writeText(qs('#invite-link').innerText);
+    const btn = qs('#share-screen .btn');
+    btn.innerText = "COPIED!";
+    setTimeout(() => btn.innerText = "Copy Link", 2000);
+}
+
+function getAvatar(gender) { return gender === 'M' ? '👨' : '👩'; }
+
+function addDraftItem() {
+    const input = qs('#draft-input');
+    const val = input.value.trim();
+    if(!val || myDrafts.length >= 5) return;
+    
+    myDrafts.push(val);
+    input.value = '';
+    
+    const list = qs('#my-drafts');
+    const div = document.createElement('div');
+    div.className = 'draft-item';
+    div.innerHTML = `<span>${val}</span> <span style="color:#ef4444;cursor:pointer" onclick="removeDraft(${myDrafts.length-1})">X</span>`;
+    list.appendChild(div);
+    
+    const btn = qs('#btn-submit-draft');
+    btn.innerText = `Submit (${myDrafts.length}/5)`;
+    if(myDrafts.length === 5) btn.disabled = false;
+}
+
+function removeDraft(idx) {
+    myDrafts.splice(idx, 1);
+    qs('#my-drafts').innerHTML = '';
+    const drafts = [...myDrafts];
+    myDrafts = [];
+    drafts.forEach(d => { qs('#draft-input').value = d; addDraftItem(); });
+    qs('#btn-submit-draft').disabled = true;
+    qs('#btn-submit-draft').innerText = `Submit (${myDrafts.length}/5)`;
+}
+
+function submitDraft() {
+    qs('#btn-submit-draft').classList.add('hidden');
+    qs('#draft-wait').classList.remove('hidden');
+    
+    const items = myDrafts.map(name => ({ name, points: Math.floor(Math.random() * 401) + 100 })); // 100-500
+    roomRef.child('drafts/' + myRole).set(items);
+}
+
+function listenToRoom() {
+    roomRef.on('value', snap => {
+        const state = snap.val();
+        if(!state) return;
+        localState = state;
+        
+        // Waiting -> Drafting
+        if(state.phase === 'waiting' && state.players.p2 && myRole === 'p1') {
+            roomRef.update({ phase: 'drafting' });
+            qs('#share-screen').classList.add('hidden');
+            qs('#draft-screen').classList.remove('hidden');
+        }
+        
+        // Drafting -> Setup Array -> Bidding
+        if(state.phase === 'drafting' && state.drafts && state.drafts.p1 && state.drafts.p2 && myRole === 'p1') {
+            const allItems = [...state.drafts.p1, ...state.drafts.p2].sort(() => Math.random() - 0.5);
+            roomRef.update({ phase: 'bidding', items: allItems, drafts: null });
+        }
+        
+        // Bidding UI Updates
+        if(state.phase === 'bidding' || state.phase === 'end') {
+            qs('#setup-screen').classList.add('hidden');
+            qs('#share-screen').classList.add('hidden');
+            qs('#draft-screen').classList.add('hidden');
+            renderGame(state);
+        }
+    });
+}
+
+function renderGame(state) {
+    const me = state.players[myRole];
+    const opp = state.players[oppRole];
+    
+    // Header & Dashboards
+    qs('#name-me').innerText = me.name;
+    qs('#ava-me').innerText = getAvatar(me.gender);
+    qs('#funds-me').innerText = `₹${me.funds}`;
+    qs('#score-me').innerText = me.score;
+    
+    qs('#name-opp').innerText = opp.name;
+    qs('#ava-opp').innerText = getAvatar(opp.gender);
+    qs('#funds-opp').innerText = `₹${opp.funds}`;
+    qs('#score-opp').innerText = opp.score;
+    
+    // Inventory Updates
+    const renderInv = (player, listId) => {
+        const list = qs(listId);
+        list.innerHTML = '';
+        if(player.items) {
+            Object.values(player.items).forEach(i => {
+                list.innerHTML += `<div><span>${i.name}</span><span style="color:#22c55e">+${i.points}</span></div>`;
+            });
+        }
+    };
+    renderInv(me, '#inv-me');
+    renderInv(opp, '#inv-opp');
+
+    // End Game Check
+    if(state.phase === 'end') {
+        qs('#end-screen').classList.remove('hidden');
+        const winTitle = qs('#win-title');
+        const winDesc = qs('#win-desc');
+        if(me.score > opp.score) { winTitle.innerText = 'VICTORY'; winTitle.style.color = '#22c55e'; winDesc.innerText = `You won with ${me.score} points!`; }
+        else if(me.score < opp.score) { winTitle.innerText = 'DEFEAT'; winTitle.style.color = '#ef4444'; winDesc.innerText = `Opponent won with ${opp.score} points.`; }
+        else { winTitle.innerText = 'DRAW'; winTitle.style.color = '#eab308'; winDesc.innerText = 'It is a tie!'; }
+        return;
+    }
+
+    // Auction Stage
+    const item = state.items[state.auction.index];
+    qs('#item-counter').innerText = `ITEM ${state.auction.index + 1}/10`;
+    qs('#item-name').innerText = item.name;
+    qs('#item-score').innerText = `Points: ${item.points}`;
+    qs('#current-bid-display').innerText = `₹ ${state.auction.currentBid}`;
+    
+    // Controls & Turn
+    const isMyTurn = state.auction.turn === myRole;
+    const canAfford = me.funds > state.auction.currentBid;
+    
+    const input = qs('#bid-input');
+    const btnBid = qs('#btn-bid');
+    const btnLeave = qs('#btn-leave');
+    const indicator = qs('#turn-indicator');
+    
+    if(isMyTurn) {
+        indicator.innerText = "YOUR TURN";
+        indicator.style.background = "#22c55e";
+        indicator.style.color = "#000";
+        btnLeave.disabled = false;
+        
+        if(canAfford) {
+            btnBid.disabled = false;
+            input.disabled = false;
+        } else {
+            btnBid.disabled = true;
+            input.disabled = true;
+            input.placeholder = "Insufficient Funds";
+            playSound('error');
+        }
+    } else {
+        indicator.innerText = "OPPONENT'S TURN";
+        indicator.style.background = "#000";
+        indicator.style.color = "#94a3b8";
+        btnBid.disabled = true;
+        btnLeave.disabled = true;
+        input.disabled = true;
+    }
+
+    // Trigger Paddle Animation if a new bid was placed
+    if(state.auction.bidCount > previousBidCount && state.auction.highestBidder) {
+        playSound('bid');
+        const padId = state.auction.highestBidder === myRole ? '#pad-me' : '#pad-opp';
+        const paddle = qs(padId);
+        paddle.querySelector('span').innerText = state.auction.currentBid;
+        paddle.classList.add('raised');
+        setTimeout(() => paddle.classList.remove('raised'), 2000);
+        previousBidCount = state.auction.bidCount;
+    }
+}
+
+function placeBid() {
+    const amount = parseInt(qs('#bid-input').value);
+    const state = localState;
+    const myFunds = state.players[myRole].funds;
+    
+    if(isNaN(amount) || amount <= state.auction.currentBid) {
+        playSound('error');
+        alert('Bid must be higher than current bid.');
+        return;
+    }
+    if(amount > myFunds) {
+        playSound('error');
+        alert('Insufficient funds.');
+        return;
+    }
+    
+    qs('#bid-input').value = '';
+    roomRef.child('auction').update({
+        currentBid: amount,
+        highestBidder: myRole,
+        turn: oppRole,
+        bidCount: firebase.database.ServerValue.increment(1)
+    });
+}
+
+function leaveBid() {
+    playSound('leave');
+    const state = localState;
+    const auction = state.auction;
+    
+    let updates = {};
+    const nextIndex = auction.index + 1;
+    updates['auction/index'] = nextIndex;
+    updates['auction/currentBid'] = 0;
+    updates['auction/highestBidder'] = null;
+    updates['auction/bidCount'] = 0;
+    
+    // Whoever bid highest wins it. If no one bid, it gets skipped.
+    if(auction.highestBidder) {
+        playSound('sold');
+        const winner = auction.highestBidder;
+        const item = state.items[auction.index];
+        const cost = auction.currentBid;
+        
+        updates[`players/${winner}/funds`] = state.players[winner].funds - cost;
+        updates[`players/${winner}/score`] = state.players[winner].score + item.points;
+        
+        // Push item to winner's inventory
+        roomRef.child(`players/${winner}/items`).push(item);
+    }
+    
+    if(nextIndex >= 10) {
+        updates['phase'] = 'end';
+    } else {
+        // Next item starts with the person who clicked leave (or logic of choice)
+        updates['auction/turn'] = auction.highestBidder ? auction.highestBidder : myRole;
+    }
+    
+    roomRef.update(updates);
+}
+
+function toggleInventory() {
+    const p = qs('#inventory-panel');
+    p.classList.toggle('open');
+}
+</script>
+</body>
+</html>
