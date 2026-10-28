@@ -176,11 +176,20 @@
         }
 
         /* --- 16-CHARACTER AVATAR SELECTION GALLERY --- */
+        #avatar-picker-section {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            animation: fadeIn 0.25s ease;
+        }
+
         .avatar-picker-header {
             display: flex;
-            justify-content: space-between;
+            flex-direction: column;
             align-items: center;
-            margin: 2px 0 8px;
+            justify-content: center;
+            gap: 5px;
+            margin: 2px 0 10px;
             font-size: 11px;
             font-weight: 800;
             color: var(--muted);
@@ -189,22 +198,24 @@
         }
 
         .selected-style-pill {
-            color: #60a5fa;
-            background: rgba(59, 130, 246, 0.15);
-            border: 1px solid rgba(59, 130, 246, 0.4);
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 10px;
+            color: #ffffff;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.3), rgba(37, 99, 235, 0.45));
+            border: 1px solid var(--blue);
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 12px;
             font-weight: 800;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
         }
 
         .avatar-picker-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 8px;
-            max-height: 215px;
+            max-height: 210px;
             overflow-y: auto;
-            padding: 6px;
+            padding: 8px;
             margin-bottom: 14px;
             background: rgba(9, 13, 22, 0.75);
             border: 1px solid #26334d;
@@ -224,15 +235,17 @@
         .avatar-option-card {
             background: rgba(19, 27, 46, 0.9);
             border: 2px solid rgba(255, 255, 255, 0.08);
-            border-radius: 12px;
-            padding: 6px 4px 5px;
+            border-radius: 14px;
+            padding: 6px;
             cursor: pointer;
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: center;
             gap: 4px;
             transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
             position: relative;
+            aspect-ratio: 1 / 1;
         }
 
         .avatar-option-card:hover {
@@ -242,20 +255,21 @@
 
         .avatar-option-card.selected {
             border-color: var(--blue);
-            background: rgba(59, 130, 246, 0.22);
-            box-shadow: 0 0 14px rgba(59, 130, 246, 0.45);
-            transform: scale(1.03);
+            background: rgba(59, 130, 246, 0.24);
+            box-shadow: 0 0 14px rgba(59, 130, 246, 0.5);
+            transform: scale(1.04);
         }
 
         .avatar-option-card img {
-            width: 52px;
-            height: 52px;
+            width: 56px;
+            height: 56px;
             object-fit: contain;
             filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.45));
             pointer-events: none;
         }
 
         .avatar-option-label {
+            display: none;
             font-size: 9px;
             font-weight: 700;
             color: #cbd5e1;
@@ -285,7 +299,6 @@
             text-transform: uppercase;
             letter-spacing: 0.8px;
             box-shadow: 0 6px 20px rgba(37, 99, 235, 0.35);
-            flex-shrink: 0;
         }
 
         .btn:active { transform: scale(0.96); }
@@ -728,6 +741,42 @@
             z-index: 3;
             transform-origin: bottom center;
             margin-bottom: -4px;
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* Dynamic 3D Floor Shadow underneath the character */
+        .avatar-floor-shadow {
+            width: 82px;
+            height: 12px;
+            background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.75) 0%, rgba(0, 0, 0, 0) 75%);
+            border-radius: 50%;
+            margin-bottom: -7px;
+            z-index: 2;
+            pointer-events: none;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            animation: shadowIdlePulse 3.2s ease-in-out infinite;
+        }
+
+        @keyframes shadowIdlePulse {
+            0%, 100% { transform: scaleX(1) scaleY(1); opacity: 0.75; }
+            50% { transform: scaleX(0.92) scaleY(0.9); opacity: 0.55; }
+        }
+
+        .avatar-floor-shadow.shadow-jump {
+            animation: shadowJoyJump 0.85s cubic-bezier(0.28, 0.84, 0.42, 1) 3;
+        }
+
+        @keyframes shadowJoyJump {
+            0%, 100% { transform: scaleX(1) scaleY(1); opacity: 0.8; }
+            15% { transform: scaleX(1.18) scaleY(1.15); opacity: 0.95; }
+            45% { transform: scaleX(0.55) scaleY(0.5); opacity: 0.3; }
+            70% { transform: scaleX(0.75) scaleY(0.7); opacity: 0.45; }
+            88% { transform: scaleX(1.12) scaleY(1.1); opacity: 0.9; }
+        }
+
+        .avatar-floor-shadow.shadow-slouch {
+            transform: scaleX(1.22) scaleY(1.2);
+            opacity: 0.92;
         }
 
         /* Subtle Idle Physics Breathing on Unified Torso */
@@ -738,6 +787,16 @@
         @keyframes avatarIdleBreathe {
             0%, 100% { transform: translateY(0) scaleY(1) scaleX(1); }
             50% { transform: translateY(-3px) scaleY(1.02) scaleX(0.99); }
+        }
+
+        /* Interactive "Tension Lean" Posture when Player focuses Bid Input */
+        .p-blue .avatar-figure.tension-lean {
+            animation: none;
+            transform: translateX(6px) translateY(-2px) rotate(4deg) scaleY(1.03);
+        }
+        .p-blue .avatar-figure.tension-lean .chem-hand.hand-right {
+            animation: none;
+            transform: translateY(10px) rotate(98deg) scale(0.88);
         }
 
         .dicebear-img {
@@ -780,22 +839,36 @@
             100% { transform: translateY(0) scaleX(1) scaleY(1) rotate(0deg); }
         }
 
-        /* Physics 3: Unified Torso Loser Dead-Weight Gravity Slouch & Frustration Shake */
-        .avatar-figure.loser-tantrum {
-            animation: loserAngrySlouch 2.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards;
+        /* Physics 3: Unified Torso Loser Gavel-Impact Knockback & Gravity Slouch */
+        .p-blue .avatar-figure.loser-tantrum {
+            animation: loserKnockbackBlue 2.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards;
+        }
+        .p-orange .avatar-figure.loser-tantrum {
+            animation: loserKnockbackOrange 2.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards;
         }
         .avatar-figure.loser-tantrum .dicebear-img {
             filter: drop-shadow(0 0 14px rgba(239, 68, 68, 0.65)) saturate(0.85);
         }
 
-        @keyframes loserAngrySlouch {
+        @keyframes loserKnockbackBlue {
             0% { transform: translateY(0) scale(1) rotate(0deg); }
-            10% { transform: translateX(-6px) rotate(-6deg) scale(1.02); }
-            20% { transform: translateX(6px) rotate(6deg) scale(1.02); }
-            30% { transform: translateX(-5px) rotate(-5deg); }
-            40% { transform: translateX(5px) rotate(5deg); }
-            55% { transform: translateY(9px) scaleX(1.08) scaleY(0.88) rotate(-4deg); }
-            85% { transform: translateY(9px) scaleX(1.08) scaleY(0.88) rotate(-4deg); }
+            8% { transform: translateX(-14px) translateY(-4px) rotate(-12deg) scale(0.96); }
+            18% { transform: translateX(6px) rotate(6deg) scale(1.02); }
+            28% { transform: translateX(-6px) rotate(-6deg) scale(1.02); }
+            38% { transform: translateX(5px) rotate(5deg); }
+            55% { transform: translateY(10px) scaleX(1.08) scaleY(0.87) rotate(-4deg); }
+            85% { transform: translateY(10px) scaleX(1.08) scaleY(0.87) rotate(-4deg); }
+            100% { transform: translateY(0) scaleX(1) scaleY(1) rotate(0deg); }
+        }
+
+        @keyframes loserKnockbackOrange {
+            0% { transform: translateY(0) scale(1) rotate(0deg); }
+            8% { transform: translateX(14px) translateY(-4px) rotate(12deg) scale(0.96); }
+            18% { transform: translateX(-6px) rotate(-6deg) scale(1.02); }
+            28% { transform: translateX(6px) rotate(6deg) scale(1.02); }
+            38% { transform: translateX(-5px) rotate(-5deg); }
+            55% { transform: translateY(10px) scaleX(1.08) scaleY(0.87) rotate(4deg); }
+            85% { transform: translateY(10px) scaleX(1.08) scaleY(0.87) rotate(4deg); }
             100% { transform: translateY(0) scaleX(1) scaleY(1) rotate(0deg); }
         }
 
@@ -905,7 +978,7 @@
             50% { opacity: 1; transform: scale(1.25) rotate(12deg); }
         }
 
-        /* SHOULDER-ANCHORED SVG BIDDING PADDLE WITH CONNECTED ARM SLEEVE */
+        /* SHOULDER-ANCHORED SVG BIDDING PADDLE WITH CONNECTED ARM SLEEVE & 3D SNAP FLIP */
         .paddle-rig {
             position: absolute;
             bottom: 10px;
@@ -914,6 +987,7 @@
             z-index: 6;
             pointer-events: none;
             transform-origin: 40px 118px;
+            transform-style: preserve-3d;
             transition: transform 0.48s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.25s ease;
             opacity: 0;
         }
@@ -921,11 +995,11 @@
         /* Blue player holds paddle anchored to their right shoulder (inner arena side) */
         .p-blue .paddle-rig {
             right: -6px;
-            transform: translateY(18px) rotate(48deg) scale(0.75);
+            transform: perspective(500px) translateY(18px) rotate(48deg) rotateY(90deg) scale(0.75);
         }
         .p-blue .paddle-rig.raised {
             opacity: 1;
-            animation: bluePaddleSpring 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            animation: bluePaddleSpring 0.62s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
         }
         .p-blue .paddle-rig.pendulum-drop {
             opacity: 1;
@@ -933,27 +1007,27 @@
         }
 
         @keyframes bluePaddleSpring {
-            0% { transform: translateY(18px) rotate(48deg) scale(0.75); }
-            60% { transform: translateY(-10px) rotate(-14deg) scale(1.05); }
-            82% { transform: translateY(-5px) rotate(-2deg) scale(0.98); }
-            100% { transform: translateY(-7px) rotate(-6deg) scale(1.0); }
+            0% { transform: perspective(500px) translateY(18px) rotate(48deg) rotateY(95deg) scale(0.75); }
+            55% { transform: perspective(500px) translateY(-11px) rotate(-15deg) rotateY(-18deg) scale(1.06); }
+            80% { transform: perspective(500px) translateY(-5px) rotate(-2deg) rotateY(6deg) scale(0.98); }
+            100% { transform: perspective(500px) translateY(-7px) rotate(-6deg) rotateY(0deg) scale(1.0); }
         }
 
         @keyframes bluePendulumDrop {
-            0% { transform: translateY(-7px) rotate(-6deg) scale(1.0); opacity: 1; }
-            45% { transform: translateY(16px) rotate(72deg) scale(0.88); opacity: 0.9; }
-            70% { transform: translateY(12px) rotate(52deg) scale(0.84); opacity: 0.6; }
-            100% { transform: translateY(24px) rotate(65deg) scale(0.75); opacity: 0; }
+            0% { transform: perspective(500px) translateY(-7px) rotate(-6deg) rotateY(0deg) scale(1.0); opacity: 1; }
+            45% { transform: perspective(500px) translateY(16px) rotate(72deg) rotateY(35deg) scale(0.88); opacity: 0.9; }
+            70% { transform: perspective(500px) translateY(12px) rotate(52deg) rotateY(20deg) scale(0.84); opacity: 0.6; }
+            100% { transform: perspective(500px) translateY(24px) rotate(65deg) rotateY(70deg) scale(0.75); opacity: 0; }
         }
 
         /* Orange player holds paddle anchored to their left shoulder (inner arena side) */
         .p-orange .paddle-rig {
             left: -6px;
-            transform: translateY(18px) rotate(-48deg) scale(0.75);
+            transform: perspective(500px) translateY(18px) rotate(-48deg) rotateY(-90deg) scale(0.75);
         }
         .p-orange .paddle-rig.raised {
             opacity: 1;
-            animation: orangePaddleSpring 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            animation: orangePaddleSpring 0.62s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
         }
         .p-orange .paddle-rig.pendulum-drop {
             opacity: 1;
@@ -961,17 +1035,17 @@
         }
 
         @keyframes orangePaddleSpring {
-            0% { transform: translateY(18px) rotate(-48deg) scale(0.75); }
-            60% { transform: translateY(-10px) rotate(14deg) scale(1.05); }
-            82% { transform: translateY(-5px) rotate(2deg) scale(0.98); }
-            100% { transform: translateY(-7px) rotate(6deg) scale(1.0); }
+            0% { transform: perspective(500px) translateY(18px) rotate(-48deg) rotateY(-95deg) scale(0.75); }
+            55% { transform: perspective(500px) translateY(-11px) rotate(15deg) rotateY(18deg) scale(1.06); }
+            80% { transform: perspective(500px) translateY(-5px) rotate(2deg) rotateY(-6deg) scale(0.98); }
+            100% { transform: perspective(500px) translateY(-7px) rotate(6deg) rotateY(0deg) scale(1.0); }
         }
 
         @keyframes orangePendulumDrop {
-            0% { transform: translateY(-7px) rotate(6deg) scale(1.0); opacity: 1; }
-            45% { transform: translateY(16px) rotate(-72deg) scale(0.88); opacity: 0.9; }
-            70% { transform: translateY(12px) rotate(-52deg) scale(0.84); opacity: 0.6; }
-            100% { transform: translateY(24px) rotate(-65deg) scale(0.75); opacity: 0; }
+            0% { transform: perspective(500px) translateY(-7px) rotate(6deg) rotateY(0deg) scale(1.0); opacity: 1; }
+            45% { transform: perspective(500px) translateY(16px) rotate(-72deg) rotateY(-35deg) scale(0.88); opacity: 0.9; }
+            70% { transform: perspective(500px) translateY(12px) rotate(-52deg) rotateY(-20deg) scale(0.84); opacity: 0.6; }
+            100% { transform: perspective(500px) translateY(24px) rotate(-65deg) rotateY(-70deg) scale(0.75); opacity: 0; }
         }
 
         .paddle-svg {
@@ -1453,7 +1527,7 @@
     </div>
 </div>
 
-<!-- 1. Setup Screen (With 16 Male & 16 Female Character Gallery) -->
+<!-- 1. Setup Screen (With Select Gender Prompt & 16-Character Gallery) -->
 <div id="setup-screen" class="overlay">
     <div class="card">
         <div style="font-size:32px; margin-bottom:2px;">🔨</div>
@@ -1461,15 +1535,18 @@
         <p style="font-size:12px; color:var(--muted); margin-bottom:12px;">Set your profile & choose your character</p>
         <input type="text" id="player-name" placeholder="Enter Your Name" value="" maxlength="18" autocomplete="off">
         <select id="player-gender" onchange="onGenderChange()">
-            <option value="M">Male Avatars (16 Styles)</option>
-            <option value="F">Female Avatars (16 Styles)</option>
+            <option value="" selected disabled>Select Gender</option>
+            <option value="M">Male</option>
+            <option value="F">Female</option>
         </select>
 
-        <div class="avatar-picker-header">
-            <span>Select Character (16)</span>
-            <span class="selected-style-pill" id="selected-avatar-label">1. Specs & Classic</span>
+        <div id="avatar-picker-section" class="hidden">
+            <div class="avatar-picker-header">
+                <span>Selected Character</span>
+                <span class="selected-style-pill" id="selected-avatar-label">1. Specs & Classic</span>
+            </div>
+            <div class="avatar-picker-grid" id="avatar-picker-grid"></div>
         </div>
-        <div class="avatar-picker-grid" id="avatar-picker-grid"></div>
 
         <button class="btn" onclick="initPlayer()">Start / Join Room</button>
     </div>
@@ -1511,7 +1588,7 @@
     </div>
 </div>
 
-<!-- 4. End Victory Screen -->
+<!-- 4. End Victory Screen (Vertically Stacked Action Buttons) -->
 <div id="end-screen" class="overlay hidden">
     <div class="card">
         <div id="win-emoji" style="font-size:52px; margin-bottom:8px;">🏆</div>
@@ -1520,7 +1597,7 @@
 
         <div id="end-summary" style="background:#090d16; border:1px solid var(--border); border-radius:14px; padding:12px; margin-bottom:18px; text-align:left; font-size:12px;"></div>
 
-        <div style="display:flex; gap:10px;">
+        <div style="display:flex; flex-direction:column; gap:10px; width:100%;">
             <button class="btn" type="button" style="background:#334155; box-shadow:none;" onclick="openLedger()">📒 View Ledger</button>
             <button class="btn" type="button" onclick="endGameCleanup()">Finish & Exit</button>
         </div>
@@ -1610,6 +1687,7 @@
                         </svg>
                     </div>
                 </div>
+                <div class="avatar-floor-shadow" id="shadow-me"></div>
                 <div class="podium"><div class="podium-light"></div></div>
             </div>
         </div>
@@ -1667,6 +1745,7 @@
                         </svg>
                     </div>
                 </div>
+                <div class="avatar-floor-shadow" id="shadow-opp"></div>
                 <div class="podium"><div class="podium-light"></div></div>
             </div>
         </div>
@@ -2209,6 +2288,10 @@ function getAvatarUrl(gender, role, mood = 'neutral', avatarId = null) {
         mouth = 'smile';
         eyes = 'wink';
         eyebrows = 'raisedExcitedNatural';
+    } else if (mood === 'blink') {
+        mouth = 'smile';
+        eyes = 'closed';
+        eyebrows = 'defaultNatural';
     }
 
     return `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(preset.seed)}&skinColor=${preset.skin}&top=${preset.top}&hairColor=${preset.hair}&hatColor=${hatColor}&accessoriesProbability=${accProb}&accessories=${accVal}&accessoriesColor=262e33&facialHairProbability=${beardProb}&facialHair=${beardVal}&facialHairColor=${preset.hair}&clothing=${preset.cloth}&clothingColor=${clothColor}&mouth=${mouth}&eyes=${eyes}&eyebrows=${eyebrows}`;
@@ -2227,9 +2310,16 @@ function syncCharacterLimbColors(side, player, role) {
 /* Render the 16-Avatar Picker Grid on the Setup Screen */
 function renderAvatarPicker() {
     const gender = document.getElementById('player-gender').value;
+    const section = document.getElementById('avatar-picker-section');
     const grid = document.getElementById('avatar-picker-grid');
     const labelEl = document.getElementById('selected-avatar-label');
-    if (!grid) return;
+    if (!grid || !section) return;
+
+    if (!gender) {
+        section.classList.add('hidden');
+        return;
+    }
+    section.classList.remove('hidden');
 
     const list = AVATAR_PRESETS[gender === 'F' ? 'F' : 'M'];
     if (!list.some(item => item.id === selectedAvatarId)) {
@@ -2264,6 +2354,7 @@ function renderAvatarPicker() {
 
 function onGenderChange() {
     const gender = document.getElementById('player-gender').value;
+    if (!gender) return;
     const urlParams = new URLSearchParams(window.location.search);
     const isP2 = Boolean(urlParams.get('m'));
     selectedAvatarId = gender === 'F' ? (isP2 ? 'F3' : 'F0') : (isP2 ? 'M1' : 'M0');
@@ -2292,7 +2383,7 @@ function handleAvatarError(imgEl, side) {
 }
 
 function preloadPlayerAvatars(mePlayer, oppPlayer) {
-    const moods = ['neutral', 'win', 'lose', 'bid'];
+    const moods = ['neutral', 'win', 'lose', 'bid', 'blink'];
     moods.forEach(m => {
         const img1 = new Image();
         img1.src = getAvatarUrl(mePlayer.gender, myRole, m, mePlayer.avatarId);
@@ -2301,13 +2392,58 @@ function preloadPlayerAvatars(mePlayer, oppPlayer) {
     });
 }
 
-/* Initialize the 16-Character Picker as soon as DOM loads */
+/* --- LIVE NATURAL EYE-BLINKING & INTERACTIVE TENSION LEAN ENGINE --- */
+let blinkIntervalId = null;
+
+function startBlinkEngine() {
+    if (blinkIntervalId) clearInterval(blinkIntervalId);
+    blinkIntervalId = setInterval(() => {
+        if (!localState || localState.phase !== 'bidding' || !localState.players) return;
+        const side = Math.random() < 0.5 ? 'me' : 'opp';
+        const role = side === 'me' ? myRole : oppRole;
+        const player = localState.players[role];
+        const fig = qs(`#fig-${side}`);
+        const img = qs(`#img-${side}`);
+        if (!player || !fig || !img) return;
+
+        // Only blink when character is in calm neutral state
+        if (fig.classList.contains('winner-celebrate') || fig.classList.contains('loser-tantrum') || fig.classList.contains('bidding-bounce') || fig.classList.contains('paddle-active')) {
+            return;
+        }
+
+        const neutralUrl = getAvatarUrl(player.gender, role, 'neutral', player.avatarId);
+        const blinkUrl = getAvatarUrl(player.gender, role, 'blink', player.avatarId);
+        img.src = blinkUrl;
+        setTimeout(() => {
+            if (!fig.classList.contains('winner-celebrate') && !fig.classList.contains('loser-tantrum') && !fig.classList.contains('paddle-active')) {
+                img.src = neutralUrl;
+            }
+        }, 150);
+    }, 3400);
+}
+
+/* Initialize Setup Screen & Interactive Bid Input Tension Posture on DOM Load */
 window.addEventListener('DOMContentLoaded', () => {
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('m')) {
         selectedAvatarId = 'M1';
     }
     renderAvatarPicker();
+    startBlinkEngine();
+
+    const bidInput = document.getElementById('bid-input');
+    if (bidInput) {
+        bidInput.addEventListener('focus', () => {
+            if (localState && localState.phase === 'bidding' && localState.auction && localState.auction.turn === myRole) {
+                const figMe = document.getElementById('fig-me');
+                if (figMe) figMe.classList.add('tension-lean');
+            }
+        });
+        bidInput.addEventListener('blur', () => {
+            const figMe = document.getElementById('fig-me');
+            if (figMe) figMe.classList.remove('tension-lean');
+        });
+    }
 });
 
 /* --- LOCALIZED AVATAR BOX CONFETTI ENGINE (SHOWS IN WINNER'S BOX ON BOTH SCREENS) --- */
@@ -2414,6 +2550,13 @@ function initPlayer() {
     }
 
     const gender = qs('#player-gender').value;
+    if (!gender) {
+        playSound('error');
+        vibrateDevice([100, 50, 100]);
+        showToast("Please select your gender & character!", "error");
+        return;
+    }
+
     const avatarId = selectedAvatarId || (gender === 'F' ? 'F0' : 'M0');
     qs('#setup-screen').classList.add('hidden');
     vibrateDevice(35);
@@ -2618,7 +2761,7 @@ function handleBroadcastEvent(state) {
         if (padEl) {
             padEl.classList.remove('raised');
             padEl.classList.add('pendulum-drop');
-            if (figEl) figEl.classList.remove('paddle-active');
+            if (figEl) figEl.classList.remove('paddle-active', 'tension-lean');
             setTimeout(() => padEl.classList.remove('pendulum-drop'), 950);
         }
 
@@ -2649,9 +2792,11 @@ function handleBroadcastEvent(state) {
         const winnerCanvasId = isMeWinner ? 'confetti-me' : 'confetti-opp';
         fireAvatarBoxConfetti(winnerCanvasId);
 
-        // 4. Avatar Facial Expressions + Physics (Squash-and-Stretch Jump vs Angry Tantrum Slouch)
+        // 4. Avatar Facial Expressions + Physics (Squash-and-Stretch Jump vs Knockback & Slouch)
         const figMe = qs('#fig-me');
         const figOpp = qs('#fig-opp');
+        const shadowMe = qs('#shadow-me');
+        const shadowOpp = qs('#shadow-opp');
         const zoneMe = qs('#zone-me');
         const zoneOpp = qs('#zone-opp');
         const bannerMe = qs('#banner-me');
@@ -2663,8 +2808,10 @@ function handleBroadcastEvent(state) {
             padLoser.classList.add('pendulum-drop');
         }
 
-        figMe.classList.remove('winner-celebrate', 'loser-tantrum', 'paddle-active');
-        figOpp.classList.remove('winner-celebrate', 'loser-tantrum', 'paddle-active');
+        figMe.classList.remove('winner-celebrate', 'loser-tantrum', 'paddle-active', 'tension-lean');
+        figOpp.classList.remove('winner-celebrate', 'loser-tantrum', 'paddle-active', 'tension-lean');
+        if (shadowMe) shadowMe.classList.remove('shadow-jump', 'shadow-slouch');
+        if (shadowOpp) shadowOpp.classList.remove('shadow-jump', 'shadow-slouch');
         zoneMe.classList.remove('zone-win-glow', 'zone-lose-dim');
         zoneOpp.classList.remove('zone-win-glow', 'zone-lose-dim');
         bannerMe.className = 'emotion-banner';
@@ -2675,6 +2822,8 @@ function handleBroadcastEvent(state) {
             qs('#img-opp').src = getAvatarUrl(opp.gender, oppRole, 'lose', opp.avatarId);
             figMe.classList.add('winner-celebrate');
             figOpp.classList.add('loser-tantrum');
+            if (shadowMe) shadowMe.classList.add('shadow-jump');
+            if (shadowOpp) shadowOpp.classList.add('shadow-slouch');
             zoneMe.classList.add('zone-win-glow');
             zoneOpp.classList.add('zone-lose-dim');
             bannerMe.innerText = `🏆 WON! +${ev.points} PTS`;
@@ -2686,6 +2835,8 @@ function handleBroadcastEvent(state) {
             qs('#img-opp').src = getAvatarUrl(opp.gender, oppRole, 'win', opp.avatarId);
             figMe.classList.add('loser-tantrum');
             figOpp.classList.add('winner-celebrate');
+            if (shadowMe) shadowMe.classList.add('shadow-slouch');
+            if (shadowOpp) shadowOpp.classList.add('shadow-jump');
             zoneMe.classList.add('zone-lose-dim');
             zoneOpp.classList.add('zone-win-glow');
             bannerMe.innerText = `😤 LOST BID`;
@@ -2698,6 +2849,8 @@ function handleBroadcastEvent(state) {
         reactionTimeout = setTimeout(() => {
             figMe.classList.remove('winner-celebrate', 'loser-tantrum');
             figOpp.classList.remove('winner-celebrate', 'loser-tantrum');
+            if (shadowMe) shadowMe.classList.remove('shadow-jump', 'shadow-slouch');
+            if (shadowOpp) shadowOpp.classList.remove('shadow-jump', 'shadow-slouch');
             zoneMe.classList.remove('zone-win-glow', 'zone-lose-dim');
             zoneOpp.classList.remove('zone-win-glow', 'zone-lose-dim');
             bannerMe.className = 'emotion-banner';
@@ -2931,8 +3084,8 @@ function renderGame(state) {
 
         qs('#pad-me').classList.remove('raised', 'pendulum-drop');
         qs('#pad-opp').classList.remove('raised', 'pendulum-drop');
-        qs('#fig-me').classList.remove('paddle-active');
-        qs('#fig-opp').classList.remove('paddle-active');
+        qs('#fig-me').classList.remove('paddle-active', 'tension-lean');
+        qs('#fig-opp').classList.remove('paddle-active', 'tension-lean');
 
         cardEl.classList.remove('shift-in', 'shimmer-active');
         void cardEl.offsetWidth; // Reflow
@@ -3039,6 +3192,7 @@ function renderGame(state) {
         }
     } else {
         leastBidAutoFilledKey = null;
+        qs('#fig-me').classList.remove('tension-lean');
         if (isLeastBidState) {
             indicator.innerText = `${opp.name.toUpperCase()} HAS LEAST BID (₹1) OPTION...`;
         } else {
@@ -3055,7 +3209,7 @@ function renderGame(state) {
         input.placeholder = "Opponent's Turn";
     }
 
-    // 7. Trigger Animated SVG Bidding Paddle with Unified Torso Spring Recoil on New Bid
+    // 7. Trigger Animated SVG Bidding Paddle with Unified Torso Spring Recoil & 3D Flip on New Bid
     if (state.auction.bidCount > previousBidCount && state.auction.highestBidder) {
         playSound('bid');
         vibrateDevice(40);
@@ -3080,6 +3234,7 @@ function renderGame(state) {
             paddleRig.classList.remove('raised');
             void paddleRig.offsetWidth;
             paddleRig.classList.add('raised');
+            avatarFig.classList.remove('tension-lean');
             avatarFig.classList.add('paddle-active');
 
             // Temporary excited bidding expression preserving chosen character
@@ -3141,6 +3296,7 @@ function placeBid() {
     isActionLocked = true;
     leastBidAutoFilledKey = null;
     qs('#bid-input').value = '';
+    qs('#fig-me').classList.remove('tension-lean');
 
     // If opponent already clicked Leave at ₹0 (Least Bid state), clicking Purchase buys it immediately!
     if (isLeastBidPurchase) {
@@ -3214,6 +3370,7 @@ function leaveBid() {
     isActionLocked = true;
     leastBidAutoFilledKey = null;
     qs('#bid-input').value = '';
+    qs('#fig-me').classList.remove('tension-lean');
 
     const auction = state.auction;
     const passCount = auction.passCount || 0;
@@ -3334,6 +3491,7 @@ function startConfetti() {
 /* --- CLEANUP ROOM ON EXIT --- */
 function endGameCleanup() {
     if (timerInterval) clearInterval(timerInterval);
+    if (blinkIntervalId) clearInterval(blinkIntervalId);
     if ('speechSynthesis' in window) window.speechSynthesis.cancel();
     vibrateDevice(35);
     const goHome = () => {
