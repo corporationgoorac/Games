@@ -3,232 +3,1153 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Auction Clash</title>
-    <!-- Firebase Realtime Database included -->
+    <title>Auction Clash Pro</title>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #0f172a;
-            --surface: #1e293b;
+            --bg: #090d16;
+            --surface: #131b2e;
+            --surface-light: #1e293b;
             --blue: #3b82f6;
+            --blue-glow: rgba(59, 130, 246, 0.45);
             --orange: #f97316;
-            --text: #f8fafc;
-            --border: #334155;
+            --orange-glow: rgba(249, 115, 22, 0.45);
+            --green: #10b981;
             --danger: #ef4444;
+            --gold: #f59e0b;
+            --text: #f8fafc;
+            --muted: #94a3b8;
+            --border: rgba(255, 255, 255, 0.1);
         }
-        * { box-sizing: border-box; font-family: 'Poppins', sans-serif; -webkit-tap-highlight-color: transparent; }
-        body { background: var(--bg); color: var(--text); margin: 0; display: flex; flex-direction: column; height: 100vh; height: 100dvh; overflow: hidden; }
-        
+
+        * {
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            height: 100dvh;
+            overflow: hidden;
+            position: relative;
+        }
+
         .hidden { display: none !important; }
-        
-        /* Overlays */
-        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 1000; padding: 20px; }
-        .card { background: var(--surface); border: 1px solid var(--border); border-radius: 24px; padding: 30px; width: 100%; max-width: 400px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
-        .card h2 { margin-top: 0; font-size: 24px; }
-        
-        input, select { width: 100%; background: #0f172a; border: 2px solid var(--border); color: #fff; padding: 15px; border-radius: 12px; margin-bottom: 15px; font-size: 16px; outline: none; }
-        input:focus { border-color: var(--blue); }
-        
-        .btn { width: 100%; padding: 15px; border-radius: 12px; border: none; font-weight: 800; font-size: 16px; cursor: pointer; transition: 0.2s; background: #fff; color: #000; text-transform: uppercase; }
+
+        /* --- TOAST NOTIFICATION --- */
+        #toast-container {
+            position: fixed;
+            top: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 3000;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            width: 90%;
+            max-width: 380px;
+            pointer-events: none;
+        }
+
+        .toast {
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--blue);
+            color: #fff;
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            animation: toastIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        .toast.error { border-left-color: var(--danger); }
+        .toast.success { border-left-color: var(--green); }
+
+        @keyframes toastIn {
+            from { opacity: 0; transform: translateY(-20px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* --- CUSTOM HTML MODAL (BACK-BUTTON SUPPORTED) --- */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.78);
+            backdrop-filter: blur(6px);
+            z-index: 2500;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .modal-box {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 22px;
+            padding: 24px;
+            width: 100%;
+            max-width: 340px;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+            animation: popIn 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .modal-title { font-size: 18px; font-weight: 800; margin: 0 0 8px; }
+        .modal-msg { font-size: 13px; color: var(--muted); margin: 0 0 20px; line-height: 1.5; }
+        .modal-actions { display: flex; gap: 10px; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        /* --- OVERLAYS (SETUP, SHARE, DRAFT, END) --- */
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle at top, #1e293b 0%, #090d16 80%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1500;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .card {
+            background: rgba(19, 27, 46, 0.9);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 26px 22px;
+            width: 100%;
+            max-width: 390px;
+            text-align: center;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(12px);
+        }
+
+        .card h2 {
+            margin: 0 0 6px;
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+        }
+
+        input, select {
+            width: 100%;
+            background: #090d16;
+            border: 2px solid #26334d;
+            color: #fff;
+            padding: 13px 15px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            user-select: text;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--blue);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border-radius: 12px;
+            border: none;
+            font-weight: 800;
+            font-size: 15px;
+            cursor: pointer;
+            transition: transform 0.15s, opacity 0.2s, box-shadow 0.2s;
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.35);
+        }
+
         .btn:active { transform: scale(0.96); }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        
-        /* Spinner */
-        .spinner { width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.1); border-top: 4px solid var(--blue); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 15px; }
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+
+        /* --- SPINNER --- */
+        .spinner {
+            width: 42px;
+            height: 42px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top: 4px solid var(--blue);
+            border-radius: 50%;
+            animation: spin 0.85s linear infinite;
+            margin: 10px auto 14px;
+        }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* Main Layout */
-        #game-screen { flex: 1; display: flex; flex-direction: column; position: relative; }
-        
-        /* Top: Stage */
-        .stage { flex: 0.8; display: flex; flex-direction: column; justify-content: center; align-items: center; background: radial-gradient(circle at top, #2d3748, #0f172a); border-bottom: 2px solid var(--border); position: relative; padding: 20px; }
-        .auction-card { background: #000; padding: 20px 40px; border-radius: 20px; border: 1px solid #fff; box-shadow: 0 0 30px rgba(255,255,255,0.1); text-align: center; }
-        .item-icon { font-size: 40px; margin-bottom: 10px; }
-        #item-name { font-size: 22px; font-weight: 800; margin: 0; text-transform: uppercase; letter-spacing: 1px; }
-        #item-score { font-size: 14px; color: #a1a1aa; margin-top: 5px; }
-        #current-bid-display { font-size: 40px; font-weight: 800; color: #fff; margin-top: 15px; text-shadow: 0 0 10px rgba(255,255,255,0.5); }
-        
-        /* Middle: Arena */
-        .arena { flex: 1.2; display: flex; }
-        .player-zone { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-bottom: 40px; position: relative; }
-        .p-blue { background: linear-gradient(to top, rgba(59,130,246,0.1), transparent); border-right: 1px solid var(--border); }
-        .p-orange { background: linear-gradient(to top, rgba(249,115,22,0.1), transparent); }
-        
-        .dash { position: absolute; top: 15px; text-align: center; width: 100%; }
-        .dash-name { font-size: 14px; font-weight: 800; text-transform: uppercase; margin-bottom: 5px; }
-        .p-blue .dash-name { color: var(--blue); }
-        .p-orange .dash-name { color: var(--orange); }
-        .dash-stats { font-size: 12px; color: #94a3b8; line-height: 1.4; }
-        .dash-funds { font-weight: 800; font-size: 18px; color: #fff; }
-        
-        /* Animated Avatars & Paddles */
-        .avatar-wrap { position: relative; width: 140px; height: 160px; display: flex; justify-content: center; align-items: flex-end; }
-        .character { position: relative; width: 100%; height: 100%; display: flex; justify-content: center; }
+        .link-box {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            background: #060911;
+            padding: 14px;
+            border-radius: 12px;
+            margin: 15px 0;
+            border: 1px dashed var(--blue);
+            word-break: break-all;
+            color: #93c5fd;
+            user-select: all;
+        }
 
-        .torso { position: absolute; bottom: 20px; width: 70px; height: 60px; border-radius: 35px 35px 0 0; z-index: 2; }
-        .p-blue .torso { background: #2563eb; }
-        .p-orange .torso { background: #ea580c; }
+        /* --- MAIN GAME SCREEN --- */
+        #game-screen {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            overflow: hidden;
+            position: relative;
+        }
 
-        .head { position: absolute; bottom: 75px; width: 45px; height: 45px; background: #ffedd5; border-radius: 50%; z-index: 3; box-shadow: inset -5px -5px 10px rgba(0,0,0,0.1); }
-        .hair { background: #0f172a; position: absolute; }
-        .gender-M .hair { width: 45px; height: 18px; border-radius: 20px 20px 0 0; top: -2px; left: 0; }
-        .gender-F .hair { width: 55px; height: 40px; border-radius: 25px 25px 10px 10px; top: -2px; left: -5px; z-index: -1; }
+        /* --- TOP 25% COMPACT STAGE --- */
+        .stage {
+            height: 23%;
+            min-height: 130px;
+            max-height: 175px;
+            padding: 12px 16px 8px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            background: linear-gradient(180deg, #162038 0%, #090d16 100%);
+            border-bottom: 1px solid var(--border);
+            position: relative;
+            z-index: 10;
+        }
 
-        .desk { position: absolute; bottom: 0; width: 140px; height: 25px; background: #1e293b; border-top: 3px solid #334155; z-index: 5; border-radius: 4px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+        .stage-top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--muted);
+            letter-spacing: 1px;
+        }
 
-        .arm-joint { position: absolute; bottom: 55px; z-index: 4; width: 20px; height: 20px; border-radius: 50%; transform-origin: center center; transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        .p-blue .arm-joint { right: 25px; transform: rotate(20deg); }
-        .p-orange .arm-joint { left: 25px; transform: rotate(-20deg); }
+        .leader-pill {
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 800;
+            background: rgba(255, 255, 255, 0.06);
+            color: #cbd5e1;
+            transition: 0.3s;
+        }
+        .leader-pill.me { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid var(--blue); }
+        .leader-pill.opp { background: rgba(249, 115, 22, 0.2); color: #fb923c; border: 1px solid var(--orange); }
 
-        .arm { position: absolute; top: 10px; left: 4px; width: 12px; height: 45px; background: #ffedd5; border-radius: 6px; }
+        /* Compact Horizontal Auction Card */
+        .auction-card {
+            position: relative;
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 16px;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
 
-        .paddle { position: absolute; top: 50px; left: -14px; display: flex; flex-direction: column; align-items: center; }
-        .paddle-stick { width: 6px; height: 25px; background: #8b4513; border-radius: 3px; }
-        .paddle-board { width: 45px; height: 35px; background: #fff; border: 2px solid #000; border-radius: 4px; display: flex; align-items: center; justify-content: center; transform: translateY(-5px); box-shadow: 0 5px 10px rgba(0,0,0,0.3); }
-        .paddle-text { font-weight: 800; font-size: 16px; color: #000; transition: transform 0.5s; display: inline-block; }
+        .auction-card.lead-me {
+            border-color: var(--blue);
+            box-shadow: 0 0 22px var(--blue-glow);
+        }
+        .auction-card.lead-opp {
+            border-color: var(--orange);
+            box-shadow: 0 0 22px var(--orange-glow);
+        }
 
-        /* The Raise Animation Keyframes/Classes */
-        .p-blue .arm-joint.raised { transform: rotate(-150deg); }
-        .p-blue .arm-joint.raised .paddle-text { transform: rotate(150deg); }
+        /* Shimmer & Shift Animations */
+        .auction-card::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: -120%;
+            width: 60%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.28), transparent);
+            transform: skewX(-25deg);
+            pointer-events: none;
+        }
 
-        .p-orange .arm-joint.raised { transform: rotate(150deg); }
-        .p-orange .arm-joint.raised .paddle-text { transform: rotate(-150deg); }
+        .auction-card.shimmer-active::after {
+            animation: shimmerSweep 0.75s ease-in-out forwards;
+        }
 
-        /* Bottom: Controls */
-        .controls { background: var(--surface); border-top: 1px solid var(--border); padding: 15px; display: flex; flex-direction: column; gap: 10px; padding-bottom: calc(15px + env(safe-area-inset-bottom)); }
-        .bid-row { display: flex; gap: 10px; }
-        .controls input { margin: 0; flex: 1; font-size: 24px; text-align: center; font-weight: 800; }
-        .btn-bid { background: var(--blue); color: #fff; flex: 1; }
-        .btn-leave { background: var(--danger); color: #fff; flex: 1; }
-        
-        #turn-indicator { text-align: center; font-size: 12px; font-weight: 800; letter-spacing: 2px; padding: 8px; border-radius: 20px; background: #000; margin-bottom: 5px; transition: 0.3s; }
-        
-        /* Inventory Drawer */
-        .inventory-btn { background: transparent; border: 1px solid var(--border); color: #94a3b8; padding: 8px; border-radius: 8px; font-size: 12px; margin-top: 5px; }
-        #inventory-panel { position: absolute; bottom: 0; left: 0; right: 0; background: var(--surface); height: 60vh; transform: translateY(100%); transition: 0.3s; z-index: 100; border-top-left-radius: 24px; border-top-right-radius: 24px; padding: 20px; box-shadow: 0 -10px 30px rgba(0,0,0,0.8); overflow-y: auto; }
+        .auction-card.shift-in {
+            animation: cardShiftIn 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+
+        @keyframes shimmerSweep {
+            0% { left: -120%; }
+            100% { left: 150%; }
+        }
+
+        @keyframes cardShiftIn {
+            0% { opacity: 0; transform: translateX(60px) scale(0.92); }
+            100% { opacity: 1; transform: translateX(0) scale(1); }
+        }
+
+        .item-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+            flex: 1;
+        }
+
+        .item-avatar-badge {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            flex-shrink: 0;
+        }
+
+        .item-meta {
+            min-width: 0;
+            flex: 1;
+        }
+
+        #item-name {
+            font-size: 17px;
+            font-weight: 800;
+            margin: 0;
+            color: #fff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .item-points-badge {
+            display: inline-block;
+            margin-top: 2px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--gold);
+            background: rgba(245, 158, 11, 0.12);
+            padding: 2px 8px;
+            border-radius: 6px;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        .item-bid-box {
+            text-align: right;
+            flex-shrink: 0;
+        }
+
+        .bid-label {
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--muted);
+            letter-spacing: 1px;
+        }
+
+        #current-bid-display {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 26px;
+            font-weight: 800;
+            color: #fff;
+            line-height: 1.1;
+            transition: transform 0.2s, color 0.2s;
+        }
+
+        /* Urgency Timer Bar */
+        .timer-track {
+            width: 100%;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 6px;
+        }
+
+        #timer-bar {
+            height: 100%;
+            width: 100%;
+            background: linear-gradient(90deg, var(--green), var(--gold), var(--danger));
+            border-radius: 4px;
+            transition: width 0.25s linear;
+        }
+
+        /* --- MIDDLE ARENA (SEPARATED STATS + AVATAR STAGE) --- */
+        .arena {
+            flex: 1;
+            display: flex;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .player-zone {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .p-blue {
+            background: radial-gradient(circle at 50% 80%, rgba(59, 130, 246, 0.14), transparent 70%);
+            border-right: 1px solid var(--border);
+        }
+
+        .p-orange {
+            background: radial-gradient(circle at 50% 80%, rgba(249, 115, 22, 0.14), transparent 70%);
+        }
+
+        /* Dedicated Top Stats Card inside each Player Zone (Never overlaps Avatar) */
+        .player-stats-card {
+            margin: 10px 10px 0;
+            padding: 10px 12px;
+            background: rgba(19, 27, 46, 0.85);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            z-index: 5;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .p-blue .player-stats-card { border-top: 3px solid var(--blue); }
+        .p-orange .player-stats-card { border-top: 3px solid var(--orange); }
+
+        .dash-name-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 4px;
+            margin-bottom: 6px;
+        }
+
+        .dash-name {
+            font-size: 13px;
+            font-weight: 800;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+        }
+
+        .p-blue .dash-name { color: #60a5fa; }
+        .p-orange .dash-name { color: #fb923c; }
+
+        .role-tag {
+            font-size: 9px;
+            font-weight: 800;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--muted);
+            flex-shrink: 0;
+        }
+
+        .stats-grid {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(9, 13, 22, 0.6);
+            padding: 6px 10px;
+            border-radius: 10px;
+        }
+
+        .stat-col {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-label {
+            font-size: 9px;
+            color: var(--muted);
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .stat-val {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 15px;
+            font-weight: 800;
+            color: #fff;
+        }
+
+        .stat-val.funds { color: #34d399; }
+        .stat-val.score { color: #fbbf24; }
+
+        .thinking-badge {
+            margin-top: 6px;
+            font-size: 10px;
+            font-weight: 700;
+            color: #cbd5e1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            opacity: 0;
+            transition: opacity 0.25s;
+        }
+        .thinking-badge.active {
+            opacity: 1;
+            animation: pulseText 1.2s infinite ease-in-out;
+        }
+        @keyframes pulseText { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+
+        /* --- AVATAR & ANIMATED PADDLE STAGE --- */
+        .avatar-stage {
+            position: relative;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            padding-bottom: 14px;
+            min-height: 150px;
+        }
+
+        .avatar-figure {
+            position: relative;
+            width: 115px;
+            height: 125px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            z-index: 3;
+        }
+
+        .dicebear-img {
+            width: 105px;
+            height: 105px;
+            object-fit: contain;
+            filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.6));
+            transition: transform 0.3s ease;
+            z-index: 3;
+        }
+
+        .avatar-figure.bidding-bounce .dicebear-img {
+            animation: charBounce 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes charBounce {
+            0%, 100% { transform: translateY(0) scale(1); }
+            40% { transform: translateY(-8px) scale(1.05); }
+        }
+
+        /* Animated SVG Bidding Paddle */
+        .paddle-rig {
+            position: absolute;
+            bottom: 18px;
+            width: 68px;
+            height: 125px;
+            z-index: 6;
+            pointer-events: none;
+            transform-origin: bottom center;
+            transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.25s ease;
+            opacity: 0;
+        }
+
+        /* Blue player holds paddle on their right (inner arena side) */
+        .p-blue .paddle-rig {
+            right: -12px;
+            transform: translateY(35px) rotate(45deg) scale(0.75);
+        }
+        .p-blue .paddle-rig.raised {
+            opacity: 1;
+            transform: translateY(-22px) rotate(-8deg) scale(1.05);
+        }
+
+        /* Orange player holds paddle on their left (inner arena side) */
+        .p-orange .paddle-rig {
+            left: -12px;
+            transform: translateY(35px) rotate(-45deg) scale(0.75);
+        }
+        .p-orange .paddle-rig.raised {
+            opacity: 1;
+            transform: translateY(-22px) rotate(8deg) scale(1.05);
+        }
+
+        .paddle-svg {
+            width: 100%;
+            height: 100%;
+            overflow: visible;
+            filter: drop-shadow(0 8px 15px rgba(0, 0, 0, 0.65));
+        }
+
+        /* Podium / Auction Desk */
+        .podium {
+            width: 86%;
+            max-width: 155px;
+            height: 26px;
+            background: linear-gradient(180deg, #263554 0%, #131b2e 100%);
+            border-top: 3px solid #475569;
+            border-radius: 8px 8px 4px 4px;
+            z-index: 4;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .p-blue .podium { border-top-color: var(--blue); }
+        .p-orange .podium { border-top-color: var(--orange); }
+
+        .podium-light {
+            width: 40%;
+            height: 4px;
+            border-radius: 2px;
+            background: rgba(255, 255, 255, 0.15);
+        }
+        .p-blue .podium-light { background: var(--blue); box-shadow: 0 0 8px var(--blue); }
+        .p-orange .podium-light { background: var(--orange); box-shadow: 0 0 8px var(--orange); }
+
+        /* --- BOTTOM CONTROLS --- */
+        .controls {
+            background: var(--surface);
+            border-top: 1px solid var(--border);
+            padding: 12px 16px;
+            padding-bottom: calc(12px + env(safe-area-inset-bottom));
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 20;
+            box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        #turn-indicator {
+            text-align: center;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            padding: 7px 12px;
+            border-radius: 20px;
+            background: #090d16;
+            color: var(--muted);
+            transition: 0.3s;
+            text-transform: uppercase;
+        }
+
+        .bid-row {
+            display: flex;
+            gap: 10px;
+            align-items: stretch;
+        }
+
+        .controls input {
+            margin: 0;
+            flex: 1.1;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 22px;
+            text-align: center;
+            font-weight: 800;
+            padding: 10px;
+            height: 52px;
+        }
+
+        .btn-bid {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            color: #fff;
+            flex: 1;
+            height: 52px;
+            padding: 0;
+            font-size: 15px;
+        }
+
+        .btn-leave {
+            background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+            color: #fff;
+            flex: 1;
+            height: 52px;
+            padding: 0;
+            font-size: 15px;
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.3);
+        }
+
+        .ledger-btn {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border);
+            color: #cbd5e1;
+            padding: 9px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: background 0.2s;
+        }
+        .ledger-btn:active { background: rgba(255, 255, 255, 0.1); }
+
+        /* --- VIEW LEDGER DRAWER (BACK-BUTTON SUPPORTED) --- */
+        #ledger-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.65);
+            backdrop-filter: blur(4px);
+            z-index: 90;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        #ledger-backdrop.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        #inventory-panel {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--surface);
+            height: 72vh;
+            transform: translateY(100%);
+            transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+            z-index: 100;
+            border-top-left-radius: 24px;
+            border-top-right-radius: 24px;
+            border-top: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 18px 16px calc(20px + env(safe-area-inset-bottom));
+            box-shadow: 0 -15px 40px rgba(0, 0, 0, 0.85);
+            display: flex;
+            flex-direction: column;
+        }
+
         #inventory-panel.open { transform: translateY(0); }
-        .inv-list { margin-top: 15px; font-size: 14px; }
-        .inv-list div { padding: 10px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; }
-        
-        .link-box { font-family: monospace; background: #000; padding: 12px; border-radius: 8px; margin: 15px 0; border: 1px dashed #fff; word-break: break-all; }
+
+        .drawer-handle {
+            width: 42px;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+            margin: 0 auto 12px;
+        }
+
+        .ledger-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .ledger-columns {
+            display: flex;
+            gap: 12px;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .ledger-col {
+            flex: 1;
+            background: rgba(9, 13, 22, 0.55);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .ledger-col.blue-col { border-top: 3px solid var(--blue); }
+        .ledger-col.orange-col { border-top: 3px solid var(--orange); }
+
+        .ledger-player-title {
+            font-size: 13px;
+            font-weight: 800;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 6px;
+        }
+        .blue-col .ledger-player-title { color: #60a5fa; }
+        .orange-col .ledger-player-title { color: #fb923c; }
+
+        .ledger-summary-box {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.04);
+            padding: 8px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            font-size: 11px;
+        }
+
+        .ledger-sum-item {
+            display: flex;
+            flex-direction: column;
+        }
+        .ledger-sum-item span:first-child {
+            font-size: 9px;
+            color: var(--muted);
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .ledger-sum-item span:last-child {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 800;
+            font-size: 13px;
+            color: #fff;
+        }
+
+        .inv-list {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding-right: 2px;
+        }
+
+        .inv-row {
+            background: rgba(19, 27, 46, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 10px;
+            padding: 8px 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .inv-row-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .inv-item-title {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 90px;
+        }
+
+        .inv-pts {
+            color: var(--gold);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            font-weight: 800;
+        }
+
+        .inv-row-sub {
+            font-size: 10px;
+            color: #34d399;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* Confetti Canvas */
+        #confetti-canvas {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 2000;
+        }
     </style>
 </head>
 <body>
 
-<!-- Overlays -->
+<!-- Toast Notification Container -->
+<div id="toast-container"></div>
+
+<!-- Confetti Canvas -->
+<canvas id="confetti-canvas" class="hidden"></canvas>
+
+<!-- Custom Back-Button Aware Modal -->
+<div id="custom-modal" class="modal-backdrop hidden">
+    <div class="modal-box">
+        <h3 class="modal-title" id="modal-title">Notice</h3>
+        <p class="modal-msg" id="modal-msg">...</p>
+        <div class="modal-actions">
+            <button class="btn" id="modal-cancel-btn" style="background:#334155; box-shadow:none;" onclick="closeCustomModal()">Cancel</button>
+            <button class="btn" id="modal-confirm-btn" onclick="closeCustomModal()">OK</button>
+        </div>
+    </div>
+</div>
+
+<!-- 1. Setup Screen -->
 <div id="setup-screen" class="overlay">
     <div class="card">
-        <h2>Enter Auction</h2>
-        <!-- Name pre-filled dynamically -->
-        <input type="text" id="player-name" placeholder="Your Name" value="சிவ மணிகண்டன்">
+        <div style="font-size:38px; margin-bottom:6px;">🔨</div>
+        <h2>Enter Auction Clash</h2>
+        <p style="font-size:12px; color:var(--muted); margin-bottom:18px;">Set your profile to enter the bidding arena</p>
+        <input type="text" id="player-name" placeholder="Your Name" value="சிவ மணிகண்டன்" maxlength="18">
         <select id="player-gender">
-            <option value="M">Male</option>
-            <option value="F">Female</option>
+            <option value="M">Male Avatar</option>
+            <option value="F">Female Avatar</option>
         </select>
-        <button class="btn" onclick="initPlayer()">Continue</button>
+        <button class="btn" onclick="initPlayer()">Start / Join Room</button>
     </div>
 </div>
 
+<!-- 2. Share Link Screen -->
 <div id="share-screen" class="overlay hidden">
     <div class="card">
+        <div style="font-size:36px; margin-bottom:6px;">📡</div>
         <h2>Invite Opponent</h2>
-        <p style="font-size:14px; color:#94a3b8;">Send this link to start the bidding war:</p>
+        <p style="font-size:13px; color:var(--muted);">Share this room link with your friend to begin:</p>
         <div class="link-box" id="invite-link">...</div>
-        <button class="btn" onclick="copyLink()">Copy Link</button>
-        <p style="font-size:12px; margin-top:15px; color:#ef4444;">Waiting for opponent to connect...</p>
+        <button class="btn" id="btn-copy-link" onclick="copyLink()">Copy Invite Link</button>
+        <div class="spinner" style="margin-top:20px; width:30px; height:30px;"></div>
+        <p style="font-size:12px; margin:0; color:#93c5fd; font-weight:600;">Waiting for opponent to join...</p>
     </div>
 </div>
 
+<!-- 3. Draft 5 Items Screen -->
 <div id="draft-screen" class="overlay hidden">
     <div class="card">
-        <h2>Draft Celebrities</h2>
-        <p style="font-size:12px; color:#94a3b8; margin-bottom: 20px;">Enter 5 items or celebrities for the auction.</p>
+        <h2>Draft 5 Celebrities</h2>
+        <p style="font-size:12px; color:var(--muted); margin-bottom:16px;">Enter 5 names. Computer assigns secret points (100–500) to each.</p>
         
-        <div id="draft-inputs-container" style="display:flex; flex-direction:column; gap:10px; margin-bottom:15px;">
-            <input type="text" class="draft-in" placeholder="Celebrity 1">
-            <input type="text" class="draft-in" placeholder="Celebrity 2">
-            <input type="text" class="draft-in" placeholder="Celebrity 3">
-            <input type="text" class="draft-in" placeholder="Celebrity 4">
-            <input type="text" class="draft-in" placeholder="Celebrity 5">
+        <div id="draft-inputs-container" style="display:flex; flex-direction:column; gap:2px; margin-bottom:10px;">
+            <input type="text" class="draft-in" placeholder="1. Enter Name / Item" maxlength="22">
+            <input type="text" class="draft-in" placeholder="2. Enter Name / Item" maxlength="22">
+            <input type="text" class="draft-in" placeholder="3. Enter Name / Item" maxlength="22">
+            <input type="text" class="draft-in" placeholder="4. Enter Name / Item" maxlength="22">
+            <input type="text" class="draft-in" placeholder="5. Enter Name / Item" maxlength="22">
         </div>
         
-        <button class="btn hidden" id="btn-submit-draft" onclick="submitDraft()">Submit Final List</button>
+        <button class="btn hidden" id="btn-submit-draft" onclick="submitDraft()">Submit All 5 Names</button>
         
-        <div id="draft-spinner" class="hidden">
+        <div id="draft-spinner" class="hidden" style="padding:15px 0;">
             <div class="spinner"></div>
-            <p style="font-size:14px; color:#ef4444; font-weight: 600;">Waiting for opponent to submit...</p>
+            <p style="font-size:14px; color:#60a5fa; font-weight:700; margin:0;">Waiting for opponent's list...</p>
         </div>
     </div>
 </div>
 
+<!-- 4. End Victory Screen -->
 <div id="end-screen" class="overlay hidden">
     <div class="card">
-        <h1 id="win-title" style="font-size:36px; margin:0;">...</h1>
-        <p id="win-desc" style="color:#94a3b8; margin:15px 0 25px;"></p>
-        <button class="btn" onclick="endGameCleanup()">Leave Room</button>
+        <div id="win-emoji" style="font-size:52px; margin-bottom:8px;">🏆</div>
+        <h1 id="win-title" style="font-size:32px; font-weight:900; margin:0;">VICTORY</h1>
+        <p id="win-desc" style="color:var(--muted); font-size:13px; margin:10px 0 18px;"></p>
+
+        <div id="end-summary" style="background:#090d16; border:1px solid var(--border); border-radius:14px; padding:12px; margin-bottom:18px; text-align:left; font-size:12px;"></div>
+
+        <div style="display:flex; gap:10px;">
+            <button class="btn" style="background:#334155; box-shadow:none;" onclick="openLedger()">View Ledger</button>
+            <button class="btn" onclick="endGameCleanup()">Finish & Exit</button>
+        </div>
     </div>
 </div>
 
-<!-- Main Game UI -->
+<!-- Main Game Screen -->
 <div id="game-screen">
+    <!-- Top 25% Compact Stage -->
     <div class="stage">
-        <div id="item-counter" style="position:absolute; top:15px; left:15px; font-size:12px; font-weight:800; color:#94a3b8;">ITEM 1/10</div>
-        <div class="auction-card">
-            <div class="item-icon">💎</div>
-            <div id="item-name">Waiting...</div>
-            <div id="item-score">Points: ???</div>
+        <div class="stage-top-bar">
+            <span id="item-counter">ITEM 1/10</span>
+            <span id="highest-bidder-pill" class="leader-pill">NO BIDS YET</span>
         </div>
-        <div id="current-bid-display">₹ 0</div>
-    </div>
-    
-    <div class="arena">
-        <div class="player-zone p-blue">
-            <div class="dash">
-                <div class="dash-name" id="name-me">ME</div>
-                <div class="dash-stats">
-                    <span style="color:#94a3b8;">Funds:</span> <span class="dash-funds" id="funds-me">₹50</span><br>
-                    Score: <span id="score-me">0</span>
+
+        <div class="auction-card" id="auction-card">
+            <div class="item-left">
+                <div class="item-avatar-badge" id="item-icon">🌟</div>
+                <div class="item-meta">
+                    <h3 id="item-name">Waiting...</h3>
+                    <span class="item-points-badge" id="item-score">Points: ---</span>
                 </div>
             </div>
-            <div class="avatar-wrap" id="wrap-me"></div>
+            <div class="item-bid-box">
+                <div class="bid-label">Current Bid</div>
+                <div id="current-bid-display">₹0</div>
+            </div>
+        </div>
+
+        <div class="timer-track">
+            <div id="timer-bar"></div>
+        </div>
+    </div>
+    
+    <!-- Middle Bidding Arena -->
+    <div class="arena">
+        <!-- LEFT: ME (BLUE) -->
+        <div class="player-zone p-blue">
+            <div class="player-stats-card">
+                <div class="dash-name-row">
+                    <span class="dash-name" id="name-me">Player 1</span>
+                    <span class="role-tag">YOU</span>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-col">
+                        <span class="stat-label">Available</span>
+                        <span class="stat-val funds" id="funds-me">₹50</span>
+                    </div>
+                    <div class="stat-col" style="text-align:right;">
+                        <span class="stat-label">Points</span>
+                        <span class="stat-val score" id="score-me">0</span>
+                    </div>
+                </div>
+                <div class="thinking-badge" id="status-me">⚡ Your Turn to Act</div>
+            </div>
+
+            <div class="avatar-stage">
+                <div class="avatar-figure" id="fig-me">
+                    <img id="img-me" class="dicebear-img" src="" alt="My Avatar">
+                    <!-- Custom Animated SVG Bidding Paddle -->
+                    <div class="paddle-rig" id="pad-me">
+                        <svg class="paddle-svg" viewBox="0 0 80 140">
+                            <!-- Stick -->
+                            <rect x="36" y="70" width="8" height="65" rx="4" fill="#b45309" stroke="#78350f" stroke-width="2"/>
+                            <!-- Hand holding stick -->
+                            <circle cx="40" cy="108" r="10" fill="#fde68a" stroke="#d97706" stroke-width="2"/>
+                            <!-- Paddle Board -->
+                            <rect x="6" y="8" width="68" height="68" rx="14" fill="#ffffff" stroke="#3b82f6" stroke-width="5"/>
+                            <text x="40" y="32" text-anchor="middle" fill="#64748b" font-size="10" font-weight="800">BID</text>
+                            <text id="padval-me" x="40" y="57" text-anchor="middle" fill="#0f172a" font-family="JetBrains Mono, monospace" font-size="22" font-weight="900">₹0</text>
+                        </svg>
+                    </div>
+                </div>
+                <div class="podium"><div class="podium-light"></div></div>
+            </div>
         </div>
         
+        <!-- RIGHT: OPPONENT (ORANGE) -->
         <div class="player-zone p-orange">
-            <div class="dash">
-                <div class="dash-name" id="name-opp">OPPONENT</div>
-                <div class="dash-stats">
-                    <span style="color:#94a3b8;">Funds:</span> <span class="dash-funds" id="funds-opp">₹50</span><br>
-                    Score: <span id="score-opp">0</span>
+            <div class="player-stats-card">
+                <div class="dash-name-row">
+                    <span class="dash-name" id="name-opp">Opponent</span>
+                    <span class="role-tag">RIVAL</span>
                 </div>
+                <div class="stats-grid">
+                    <div class="stat-col">
+                        <span class="stat-label">Available</span>
+                        <span class="stat-val funds" id="funds-opp">₹50</span>
+                    </div>
+                    <div class="stat-col" style="text-align:right;">
+                        <span class="stat-label">Points</span>
+                        <span class="stat-val score" id="score-opp">0</span>
+                    </div>
+                </div>
+                <div class="thinking-badge" id="status-opp">⏳ Deciding bid...</div>
             </div>
-            <div class="avatar-wrap" id="wrap-opp"></div>
+
+            <div class="avatar-stage">
+                <div class="avatar-figure" id="fig-opp">
+                    <img id="img-opp" class="dicebear-img" src="" alt="Opponent Avatar">
+                    <!-- Custom Animated SVG Bidding Paddle -->
+                    <div class="paddle-rig" id="pad-opp">
+                        <svg class="paddle-svg" viewBox="0 0 80 140">
+                            <!-- Stick -->
+                            <rect x="36" y="70" width="8" height="65" rx="4" fill="#b45309" stroke="#78350f" stroke-width="2"/>
+                            <!-- Hand holding stick -->
+                            <circle cx="40" cy="108" r="10" fill="#fde68a" stroke="#d97706" stroke-width="2"/>
+                            <!-- Paddle Board -->
+                            <rect x="6" y="8" width="68" height="68" rx="14" fill="#ffffff" stroke="#f97316" stroke-width="5"/>
+                            <text x="40" y="32" text-anchor="middle" fill="#64748b" font-size="10" font-weight="800">BID</text>
+                            <text id="padval-opp" x="40" y="57" text-anchor="middle" fill="#0f172a" font-family="JetBrains Mono, monospace" font-size="22" font-weight="900">₹0</text>
+                        </svg>
+                    </div>
+                </div>
+                <div class="podium"><div class="podium-light"></div></div>
+            </div>
         </div>
     </div>
     
+    <!-- Bottom Control Bar -->
     <div class="controls">
         <div id="turn-indicator">WAITING FOR GAME TO START</div>
         <div class="bid-row">
-            <input type="number" id="bid-input" inputmode="numeric" placeholder="₹">
+            <input type="number" id="bid-input" inputmode="numeric" placeholder="₹ Amount">
             <button class="btn btn-bid" id="btn-bid" onclick="placeBid()">BID</button>
             <button class="btn btn-leave" id="btn-leave" onclick="leaveBid()">LEAVE</button>
         </div>
-        <button class="inventory-btn" onclick="toggleInventory()">View Purchased Items ▼</button>
+        <button class="ledger-btn" onclick="openLedger()">
+            <span>📒 View Ledger (Purchases, Funds & Points)</span>
+            <span>▲</span>
+        </button>
     </div>
     
+    <!-- Backdrop & View Ledger Drawer -->
+    <div id="ledger-backdrop" onclick="closeLedger()"></div>
     <div id="inventory-panel">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-            <h3 style="margin:0;">Auction Ledger</h3>
-            <button class="btn" style="width:auto; padding:5px 15px; font-size:12px;" onclick="toggleInventory()">Close</button>
+        <div class="drawer-handle"></div>
+        <div class="ledger-header">
+            <div>
+                <h3 style="margin:0; font-size:17px; font-weight:800;">Auction Ledger</h3>
+                <span style="font-size:11px; color:var(--muted);">Real-time purchases, prices paid & remaining funds</span>
+            </div>
+            <button class="btn" style="width:auto; padding:8px 16px; font-size:12px; background:#334155; box-shadow:none;" onclick="closeLedger()">Close</button>
         </div>
-        <div style="display:flex; gap:20px;">
-            <div style="flex:1;">
-                <h4 style="color:var(--blue)">My Items</h4>
+
+        <div class="ledger-columns">
+            <!-- Blue Player Ledger -->
+            <div class="ledger-col blue-col">
+                <div class="ledger-player-title" id="ledger-name-me">Me</div>
+                <div class="ledger-summary-box">
+                    <div class="ledger-sum-item">
+                        <span>Funds Left</span>
+                        <span id="ledger-funds-me" style="color:#34d399;">₹50</span>
+                    </div>
+                    <div class="ledger-sum-item">
+                        <span>Spent</span>
+                        <span id="ledger-spent-me" style="color:#f87171;">₹0</span>
+                    </div>
+                    <div class="ledger-sum-item" style="grid-column: span 2; border-top:1px solid rgba(255,255,255,0.06); padding-top:4px;">
+                        <span>Total Points</span>
+                        <span id="ledger-score-me" style="color:#fbbf24; font-size:15px;">0 pts</span>
+                    </div>
+                </div>
                 <div class="inv-list" id="inv-me"></div>
             </div>
-            <div style="flex:1;">
-                <h4 style="color:var(--orange)">Opponent's Items</h4>
+
+            <!-- Orange Player Ledger -->
+            <div class="ledger-col orange-col">
+                <div class="ledger-player-title" id="ledger-name-opp">Opponent</div>
+                <div class="ledger-summary-box">
+                    <div class="ledger-sum-item">
+                        <span>Funds Left</span>
+                        <span id="ledger-funds-opp" style="color:#34d399;">₹50</span>
+                    </div>
+                    <div class="ledger-sum-item">
+                        <span>Spent</span>
+                        <span id="ledger-spent-opp" style="color:#f87171;">₹0</span>
+                    </div>
+                    <div class="ledger-sum-item" style="grid-column: span 2; border-top:1px solid rgba(255,255,255,0.06); padding-top:4px;">
+                        <span>Total Points</span>
+                        <span id="ledger-score-opp" style="color:#fbbf24; font-size:15px;">0 pts</span>
+                    </div>
+                </div>
                 <div class="inv-list" id="inv-opp"></div>
             </div>
         </div>
@@ -236,56 +1157,235 @@
 </div>
 
 <script>
-/* Audio Synthesizer (Zero External Dependencies) */
-const AudioContext = window.AudioContext || window.webkitAudioContext;
-let audioCtx;
-function initAudio() { if(!audioCtx) audioCtx = new AudioContext(); }
-function playSound(type) {
-    if(!audioCtx || audioCtx.state === 'suspended') return;
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    const now = audioCtx.currentTime;
-    
-    if(type === 'bid') {
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(400, now);
-        osc.frequency.exponentialRampToValueAtTime(800, now + 0.1);
-        gain.gain.setValueAtTime(0, now);
-        gain.gain.linearRampToValueAtTime(1, now + 0.05);
-        gain.gain.linearRampToValueAtTime(0, now + 0.2);
-        osc.start(now); osc.stop(now + 0.2);
-    } else if (type === 'leave') {
-        osc.type = 'square';
-        osc.frequency.setValueAtTime(150, now);
-        osc.frequency.exponentialRampToValueAtTime(50, now + 0.2);
-        gain.gain.setValueAtTime(0.5, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
-        osc.start(now); osc.stop(now + 0.2);
-    } else if (type === 'sold') {
-        const bufferSize = audioCtx.sampleRate * 0.1;
-        const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-        const data = buffer.getChannelData(0);
-        for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
-        const noise = audioCtx.createBufferSource();
-        noise.buffer = buffer;
-        const filter = audioCtx.createBiquadFilter();
-        filter.type = 'lowpass'; filter.frequency.value = 800;
-        noise.connect(filter); filter.connect(gain);
-        gain.gain.setValueAtTime(1, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-        noise.start(now);
-    } else if (type === 'error') {
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(150, now);
-        gain.gain.setValueAtTime(0.5, now);
-        gain.gain.linearRampToValueAtTime(0, now + 0.3);
-        osc.start(now); osc.stop(now + 0.3);
+/* --- HAPTICS (VIBRATION ENGINE) --- */
+function vibrateDevice(pattern) {
+    if ("vibrate" in navigator) {
+        try { navigator.vibrate(pattern); } catch (e) {}
     }
 }
 
-/* Firebase Configuration */
+/* --- MULTI-LAYERED SYNTHESIZER SOUND ENGINE --- */
+const AudioContext = window.AudioContext || window.webkitAudioContext;
+let audioCtx;
+
+function initAudio() {
+    if (!audioCtx) audioCtx = new AudioContext();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+function playSound(type) {
+    if (!audioCtx) return;
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const now = audioCtx.currentTime;
+
+    if (type === 'bid') {
+        // Crisp modern pop + harmonic chime
+        const osc1 = audioCtx.createOscillator();
+        const osc2 = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc1.type = 'triangle';
+        osc2.type = 'sine';
+        osc1.frequency.setValueAtTime(320, now);
+        osc1.frequency.exponentialRampToValueAtTime(640, now + 0.12);
+        osc2.frequency.setValueAtTime(640, now);
+        osc2.frequency.exponentialRampToValueAtTime(1280, now + 0.15);
+
+        gain.gain.setValueAtTime(0.01, now);
+        gain.gain.linearRampToValueAtTime(0.35, now + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+
+        osc1.connect(gain);
+        osc2.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc1.start(now); osc2.start(now);
+        osc1.stop(now + 0.22); osc2.stop(now + 0.22);
+
+    } else if (type === 'shimmer') {
+        // Futuristic card slide & shimmer chord
+        const freqs = [523.25, 659.25, 783.99, 1046.5];
+        freqs.forEach((f, idx) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(f, now + idx * 0.04);
+            gain.gain.setValueAtTime(0.12, now + idx * 0.04);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.04 + 0.35);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(now + idx * 0.04);
+            osc.stop(now + idx * 0.04 + 0.35);
+        });
+
+    } else if (type === 'sold') {
+        // Double wooden gavel knock + bright cash chime
+        [0, 0.14].forEach(offset => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(180, now + offset);
+            osc.frequency.exponentialRampToValueAtTime(45, now + offset + 0.09);
+            gain.gain.setValueAtTime(0.5, now + offset);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + offset + 0.1);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(now + offset);
+            osc.stop(now + offset + 0.1);
+        });
+        // Cash bell
+        const bell = audioCtx.createOscillator();
+        const bGain = audioCtx.createGain();
+        bell.type = 'sine';
+        bell.frequency.setValueAtTime(1318.5, now + 0.26);
+        bGain.gain.setValueAtTime(0.25, now + 0.26);
+        bGain.gain.exponentialRampToValueAtTime(0.001, now + 0.75);
+        bell.connect(bGain);
+        bGain.connect(audioCtx.destination);
+        bell.start(now + 0.26);
+        bell.stop(now + 0.75);
+
+    } else if (type === 'leave') {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(260, now);
+        osc.frequency.exponentialRampToValueAtTime(110, now + 0.18);
+        gain.gain.setValueAtTime(0.25, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.18);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.18);
+
+    } else if (type === 'error') {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(130, now);
+        osc.frequency.setValueAtTime(105, now + 0.12);
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.28);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.28);
+
+    } else if (type === 'win') {
+        const notes = [440, 554.37, 659.25, 880];
+        notes.forEach((n, i) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(n, now + i * 0.1);
+            gain.gain.setValueAtTime(0.25, now + i * 0.1);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.1 + 0.6);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(now + i * 0.1);
+            osc.stop(now + i * 0.1 + 0.6);
+        });
+    }
+}
+
+/* --- TOAST & BACK-BUTTON SUPPORTED MODAL SYSTEM --- */
+function showToast(message, type = 'info') {
+    const container = document.getElementById('toast-container');
+    const t = document.createElement('div');
+    t.className = `toast ${type}`;
+    t.innerHTML = `<span>${message}</span>`;
+    container.appendChild(t);
+    setTimeout(() => {
+        t.style.opacity = '0';
+        t.style.transform = 'translateY(-10px)';
+        t.style.transition = '0.25s';
+        setTimeout(() => t.remove(), 250);
+    }, 2600);
+}
+
+let activeOverlayState = null;
+
+function openCustomModal(title, message, onConfirm = null) {
+    document.getElementById('modal-title').innerText = title;
+    document.getElementById('modal-msg').innerText = message;
+    const cancelBtn = document.getElementById('modal-cancel-btn');
+    const confirmBtn = document.getElementById('modal-confirm-btn');
+
+    if (onConfirm) {
+        cancelBtn.classList.remove('hidden');
+        confirmBtn.onclick = () => {
+            closeCustomModal();
+            onConfirm();
+        };
+    } else {
+        cancelBtn.classList.add('hidden');
+        confirmBtn.onclick = () => closeCustomModal();
+    }
+
+    document.getElementById('custom-modal').classList.remove('hidden');
+    if (activeOverlayState !== 'modal') {
+        history.pushState({ uiOverlay: 'modal' }, '');
+        activeOverlayState = 'modal';
+    }
+}
+
+function closeCustomModal(fromPopState = false) {
+    const modal = document.getElementById('custom-modal');
+    if (modal.classList.contains('hidden')) return;
+    modal.classList.add('hidden');
+    if (!fromPopState && activeOverlayState === 'modal') {
+        activeOverlayState = null;
+        history.back();
+    } else {
+        activeOverlayState = null;
+    }
+}
+
+function openLedger() {
+    const panel = document.getElementById('inventory-panel');
+    const backdrop = document.getElementById('ledger-backdrop');
+    if (panel.classList.contains('open')) return;
+    panel.classList.add('open');
+    backdrop.classList.add('open');
+    vibrateDevice(25);
+    if (activeOverlayState !== 'ledger') {
+        history.pushState({ uiOverlay: 'ledger' }, '');
+        activeOverlayState = 'ledger';
+    }
+}
+
+function closeLedger(fromPopState = false) {
+    const panel = document.getElementById('inventory-panel');
+    const backdrop = document.getElementById('ledger-backdrop');
+    if (!panel.classList.contains('open')) return;
+    panel.classList.remove('open');
+    backdrop.classList.remove('open');
+    if (!fromPopState && activeOverlayState === 'ledger') {
+        activeOverlayState = null;
+        history.back();
+    } else {
+        activeOverlayState = null;
+    }
+}
+
+window.addEventListener('popstate', () => {
+    if (activeOverlayState === 'ledger') {
+        closeLedger(true);
+    } else if (activeOverlayState === 'modal') {
+        closeCustomModal(true);
+    }
+});
+
+/* --- DICEBEAR PROFESSIONAL AVATAR GENERATOR (WITH INLINE FALLBACK) --- */
+function getAvatarUrl(gender, role) {
+    if (gender === 'F') {
+        const seed = role === 'p1' ? ' Sophia' : 'Valentina';
+        return `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(seed)}&top=longButNotTooLong,straight01,curvy&clothing=blazerAndSweater,collarAndSweater&clothingColor=2563eb,ea580c&mouth=smile,default&eyes=default,happy&eyebrows=defaultNatural`;
+    } else {
+        const seed = role === 'p1' ? 'Alexander' : 'Kingston';
+        return `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(seed)}&top=shortFlat,shortWaved,theCaesar&clothing=blazerAndShirt,blazerAndSweater&clothingColor=2563eb,ea580c&mouth=smile,default&eyes=default,happy&eyebrows=defaultNatural&facialHairProbability=20`;
+    }
+}
+
+/* --- FIREBASE CONFIGURATION --- */
 const firebaseConfig = {
     apiKey: "AIzaSyCkpSNJP6-puaQsB9H5ZX_pp9alrbR58lI",
     authDomain: "pinga-8bba9.firebaseapp.com",
@@ -299,39 +1399,57 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-/* Game State */
+/* --- GAME STATE VARIABLES --- */
 let roomId, myRole, oppRole;
 let roomRef;
 let localState = {};
 let previousBidCount = 0;
+let previousItemIndex = -1;
+let previousTurn = null;
+let avatarsLoaded = false;
+let paddleTimeoutMe = null;
+let paddleTimeoutOpp = null;
+
+/* Urgency Timer (15 seconds per turn) */
+const TURN_SECONDS = 15;
+let timerInterval = null;
+let timeRemaining = TURN_SECONDS;
+
+const ITEM_ICONS = ['🌟', '👑', '💎', '🚀', '🏆', '⚡', '🔥', '🎭', '🎬', '🎸'];
 
 function qs(sel) { return document.querySelector(sel); }
 
 function initPlayer() {
     initAudio();
-    if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+    const nameInput = qs('#player-name').value.trim();
+    if (!nameInput) {
+        playSound('error');
+        vibrateDevice([100, 50, 100]);
+        showToast("Please enter your name first!", "error");
+        return;
+    }
 
-    const name = qs('#player-name').value.trim() || 'Player';
     const gender = qs('#player-gender').value;
-    
     qs('#setup-screen').classList.add('hidden');
-    
+    vibrateDevice(35);
+
     const urlParams = new URLSearchParams(window.location.search);
     const mId = urlParams.get('m');
-    
+
     if (mId) {
         roomId = mId;
         myRole = 'p2';
         oppRole = 'p1';
         roomRef = db.ref('auctions/' + roomId);
-        
+
         roomRef.once('value', snap => {
-            if(!snap.exists()) {
-                alert("Room closed or doesn't exist.");
-                window.location.href = window.location.pathname;
+            if (!snap.exists()) {
+                openCustomModal("Room Unavailable", "This auction room has ended or does not exist.", () => {
+                    window.location.href = window.location.pathname;
+                });
                 return;
             }
-            roomRef.child('players/p2').set({ name, gender, funds: 50, score: 0 });
+            roomRef.child('players/p2').set({ name: nameInput, gender, funds: 50, score: 0, spent: 0 });
             qs('#draft-screen').classList.remove('hidden');
         });
     } else {
@@ -339,31 +1457,31 @@ function initPlayer() {
         myRole = 'p1';
         oppRole = 'p2';
         roomRef = db.ref('auctions/' + roomId);
-        
-        // Removed onDisconnect().remove() to allow safe backgrounding/minimization
-        
+
         roomRef.set({
             phase: 'waiting',
-            players: { p1: { name, gender, funds: 50, score: 0 } },
+            players: { p1: { name: nameInput, gender, funds: 50, score: 0, spent: 0 } },
             auction: { index: 0, currentBid: 0, highestBidder: null, turn: 'p1', bidCount: 0 }
         });
-        
+
         qs('#invite-link').innerText = window.location.origin + window.location.pathname + "?m=" + roomId;
         qs('#share-screen').classList.remove('hidden');
     }
-    
+
     listenToRoom();
 }
 
-/* Clipboard Logic */
+/* --- CLIPBOARD FALLBACK LOGIC --- */
 function copyLink() {
     const linkText = qs('#invite-link').innerText;
-    const btn = qs('#share-screen .btn');
-    
+    const btn = qs('#btn-copy-link');
+    vibrateDevice(30);
+
     if (navigator.clipboard && window.isSecureContext) {
         navigator.clipboard.writeText(linkText).then(() => {
-            btn.innerText = "COPIED!";
-            setTimeout(() => btn.innerText = "Copy Link", 2000);
+            btn.innerText = "COPIED TO CLIPBOARD!";
+            showToast("Invite link copied!", "success");
+            setTimeout(() => btn.innerText = "Copy Invite Link", 2000);
         }).catch(() => fallbackCopy(linkText, btn));
     } else {
         fallbackCopy(linkText, btn);
@@ -381,57 +1499,70 @@ function fallbackCopy(text, btn) {
     textArea.select();
     try {
         document.execCommand('copy');
-        btn.innerText = "COPIED!";
-        setTimeout(() => btn.innerText = "Copy Link", 2000);
+        btn.innerText = "COPIED TO CLIPBOARD!";
+        showToast("Invite link copied!", "success");
+        setTimeout(() => btn.innerText = "Copy Invite Link", 2000);
     } catch (err) {
-        console.error('Fallback copy failed', err);
-        alert("Auto-copy blocked by browser. Please select the link and copy it manually.");
+        showToast("Please tap and copy the link manually.", "error");
     }
     document.body.removeChild(textArea);
 }
 
-/* Drafting Logic */
+/* --- 5-FIELD DRAFTING LOGIC --- */
 document.querySelectorAll('.draft-in').forEach(input => {
     input.addEventListener('input', () => {
         const allFilled = Array.from(document.querySelectorAll('.draft-in')).every(i => i.value.trim().length > 0);
-        if(allFilled) qs('#btn-submit-draft').classList.remove('hidden');
-        else qs('#btn-submit-draft').classList.add('hidden');
+        if (allFilled) {
+            qs('#btn-submit-draft').classList.remove('hidden');
+        } else {
+            qs('#btn-submit-draft').classList.add('hidden');
+        }
     });
 });
 
 function submitDraft() {
+    vibrateDevice(40);
+    playSound('bid');
     qs('#draft-inputs-container').classList.add('hidden');
     qs('#btn-submit-draft').classList.add('hidden');
     qs('#draft-spinner').classList.remove('hidden');
-    
+
     const inputs = document.querySelectorAll('.draft-in');
-    const items = Array.from(inputs).map(i => ({ 
-        name: i.value.trim(), 
-        points: Math.floor(Math.random() * 401) + 100 
+    const items = Array.from(inputs).map(i => ({
+        name: i.value.trim(),
+        points: Math.floor(Math.random() * 401) + 100
     }));
-    
+
     roomRef.child('drafts/' + myRole).set({ ready: true, items: items });
 }
 
+/* --- REAL-TIME ROOM SYNC --- */
 function listenToRoom() {
     roomRef.on('value', snap => {
         const state = snap.val();
-        if(!state) return;
+        if (!state) return;
         localState = state;
-        
-        if(state.phase === 'waiting' && state.players.p2 && myRole === 'p1') {
+
+        if (state.phase === 'waiting' && state.players && state.players.p2 && myRole === 'p1') {
             roomRef.update({ phase: 'drafting' });
             qs('#share-screen').classList.add('hidden');
             qs('#draft-screen').classList.remove('hidden');
+            vibrateDevice([40, 60, 40]);
+            showToast(`${state.players.p2.name} connected!`, "success");
         }
-        
-        // Robust state sync: Only proceeds when BOTH players successfully uploaded their ready flag and items array
-        if(state.phase === 'drafting' && state.drafts && state.drafts.p1 && state.drafts.p1.ready && state.drafts.p2 && state.drafts.p2.ready && myRole === 'p1') {
+
+        if (state.phase === 'drafting' && state.drafts && state.drafts.p1 && state.drafts.p1.ready && state.drafts.p2 && state.drafts.p2.ready && myRole === 'p1') {
             const allItems = [...state.drafts.p1.items, ...state.drafts.p2.items].sort(() => Math.random() - 0.5);
-            roomRef.update({ phase: 'bidding', items: allItems, drafts: null });
+            const firstTurn = Math.random() < 0.5 ? 'p1' : 'p2';
+            roomRef.update({
+                phase: 'bidding',
+                items: allItems,
+                'auction/turn': firstTurn,
+                drafts: null
+            });
         }
-        
-        if(state.phase === 'bidding' || state.phase === 'end') {
+
+        if (state.phase === 'bidding' || state.phase === 'end') {
             qs('#setup-screen').classList.add('hidden');
             qs('#share-screen').classList.add('hidden');
             qs('#draft-screen').classList.add('hidden');
@@ -440,134 +1571,288 @@ function listenToRoom() {
     });
 }
 
-function getCharacterHTML(gender, roleId) {
-    return `
-    <div class="character gender-${gender}">
-        <div class="torso"></div>
-        <div class="head"><div class="hair"></div></div>
-        <div class="arm-joint" id="joint-${roleId}">
-            <div class="arm"></div>
-            <div class="paddle">
-                <div class="paddle-stick"></div>
-                <div class="paddle-board">
-                    <span class="bid-val paddle-text" id="padval-${roleId}">0</span>
-                </div>
-            </div>
-        </div>
-        <div class="desk"></div>
-    </div>`;
+/* --- URGENCY TIMER LOGIC --- */
+function resetTurnTimer(isMyTurn, isGameEnded) {
+    if (timerInterval) clearInterval(timerInterval);
+    const bar = qs('#timer-bar');
+    if (isGameEnded) {
+        bar.style.width = '0%';
+        return;
+    }
+
+    timeRemaining = TURN_SECONDS;
+    bar.style.width = '100%';
+
+    timerInterval = setInterval(() => {
+        timeRemaining -= 0.25;
+        const pct = Math.max(0, (timeRemaining / TURN_SECONDS) * 100);
+        bar.style.width = pct + '%';
+
+        if (timeRemaining <= 0) {
+            clearInterval(timerInterval);
+            if (isMyTurn && localState.phase === 'bidding') {
+                showToast("Time's up! Auto-passing turn...", "error");
+                leaveBid();
+            }
+        }
+    }, 250);
 }
 
+/* --- MAIN GAME RENDERER --- */
 function renderGame(state) {
+    if (!state.players || !state.players[myRole] || !state.players[oppRole]) return;
+
     const me = state.players[myRole];
     const opp = state.players[oppRole];
-    
+
+    // 1. Update Arena & Ledger Names + Live Stats
     qs('#name-me').innerText = me.name;
     qs('#funds-me').innerText = `₹${me.funds}`;
     qs('#score-me').innerText = me.score;
-    
+
     qs('#name-opp').innerText = opp.name;
     qs('#funds-opp').innerText = `₹${opp.funds}`;
     qs('#score-opp').innerText = opp.score;
-    
-    // Inject Avatars only once to preserve CSS transitions
-    if(qs('#wrap-me').innerHTML.trim() === '') {
-        qs('#wrap-me').innerHTML = getCharacterHTML(me.gender, 'me');
-        qs('#wrap-opp').innerHTML = getCharacterHTML(opp.gender, 'opp');
+
+    // Ledger Header & Summary
+    const meSpent = 50 - me.funds;
+    const oppSpent = 50 - opp.funds;
+    qs('#ledger-name-me').innerText = `${me.name} (You)`;
+    qs('#ledger-funds-me').innerText = `₹${me.funds}`;
+    qs('#ledger-spent-me').innerText = `₹${meSpent}`;
+    qs('#ledger-score-me').innerText = `${me.score} pts`;
+
+    qs('#ledger-name-opp').innerText = opp.name;
+    qs('#ledger-funds-opp').innerText = `₹${opp.funds}`;
+    qs('#ledger-spent-opp').innerText = `₹${oppSpent}`;
+    qs('#ledger-score-opp').innerText = `${opp.score} pts`;
+
+    // 2. Load Imported DiceBear Avatars Once
+    if (!avatarsLoaded) {
+        qs('#img-me').src = getAvatarUrl(me.gender, myRole);
+        qs('#img-opp').src = getAvatarUrl(opp.gender, oppRole);
+        avatarsLoaded = true;
     }
-    
+
+    // 3. Populate Detailed Ledger Lists (Name, Points, Paid Price)
     const renderInv = (player, listId) => {
         const list = qs(listId);
         list.innerHTML = '';
-        if(player.items) {
+        if (player.items) {
             Object.values(player.items).forEach(i => {
-                list.innerHTML += `<div><span>${i.name}</span><span style="color:#22c55e">+${i.points}</span></div>`;
+                const paidAmt = i.cost !== undefined ? i.cost : 0;
+                list.innerHTML += `
+                    <div class="inv-row">
+                        <div class="inv-row-top">
+                            <span class="inv-item-title">${i.name}</span>
+                            <span class="inv-pts">+${i.points} pts</span>
+                        </div>
+                        <div class="inv-row-sub">
+                            <span>Purchased</span>
+                            <span>Paid ₹${paidAmt}</span>
+                        </div>
+                    </div>`;
             });
+        } else {
+            list.innerHTML = `<div style="font-size:11px; color:var(--muted); text-align:center; padding-top:20px;">No purchases yet</div>`;
         }
     };
     renderInv(me, '#inv-me');
     renderInv(opp, '#inv-opp');
 
-    if(state.phase === 'end') {
+    // 4. Check Game Over State
+    if (state.phase === 'end') {
+        resetTurnTimer(false, true);
         qs('#end-screen').classList.remove('hidden');
         const winTitle = qs('#win-title');
         const winDesc = qs('#win-desc');
-        if(me.score > opp.score) { winTitle.innerText = 'VICTORY'; winTitle.style.color = '#22c55e'; winDesc.innerText = `You won with ${me.score} points!`; }
-        else if(me.score < opp.score) { winTitle.innerText = 'DEFEAT'; winTitle.style.color = '#ef4444'; winDesc.innerText = `Opponent won with ${opp.score} points.`; }
-        else { winTitle.innerText = 'DRAW'; winTitle.style.color = '#eab308'; winDesc.innerText = 'It is a tie!'; }
+        const winEmoji = qs('#win-emoji');
+
+        playSound('win');
+        vibrateDevice([100, 50, 100, 50, 220]);
+        startConfetti();
+
+        if (me.score > opp.score) {
+            winEmoji.innerText = '🏆';
+            winTitle.innerText = 'VICTORY!';
+            winTitle.style.color = '#10b981';
+            winDesc.innerText = `You defeated ${opp.name} with ${me.score} points!`;
+        } else if (me.score < opp.score) {
+            winEmoji.innerText = '⚔️';
+            winTitle.innerText = 'DEFEAT';
+            winTitle.style.color = '#ef4444';
+            winDesc.innerText = `${opp.name} won the auction with ${opp.score} points.`;
+        } else {
+            winEmoji.innerText = '🤝';
+            winTitle.innerText = 'DRAW GAME';
+            winTitle.style.color = '#f59e0b';
+            winDesc.innerText = `Both players tied at ${me.score} points!`;
+        }
+
+        qs('#end-summary').innerHTML = `
+            <div style="display:flex; justify-content:space-between; margin-bottom:6px; color:#60a5fa; font-weight:700;">
+                <span>${me.name} (You)</span>
+                <span>${me.score} pts • ₹${me.funds} left</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; color:#fb923c; font-weight:700;">
+                <span>${opp.name}</span>
+                <span>${opp.score} pts • ₹${opp.funds} left</span>
+            </div>
+        `;
         return;
     }
 
-    const item = state.items[state.auction.index];
-    qs('#item-counter').innerText = `ITEM ${state.auction.index + 1}/10`;
+    // 5. Stage Item & Shift + Shimmer Reveal Animation on New Item
+    const currentIndex = state.auction.index;
+    const item = state.items[currentIndex];
+    const cardEl = qs('#auction-card');
+
+    qs('#item-counter').innerText = `ITEM ${currentIndex + 1} OF 10`;
+    qs('#item-icon').innerText = ITEM_ICONS[currentIndex % ITEM_ICONS.length];
     qs('#item-name').innerText = item.name;
     qs('#item-score').innerText = `Points: ${item.points}`;
-    qs('#current-bid-display').innerText = `₹ ${state.auction.currentBid}`;
-    
+    qs('#current-bid-display').innerText = `₹${state.auction.currentBid}`;
+
+    if (currentIndex !== previousItemIndex) {
+        // New item arrived -> Shift + Shimmer + Haptic Pulse
+        previousItemIndex = currentIndex;
+        previousBidCount = 0;
+
+        qs('#pad-me').classList.remove('raised');
+        qs('#pad-opp').classList.remove('raised');
+
+        cardEl.classList.remove('shift-in', 'shimmer-active');
+        void cardEl.offsetWidth; // Reflow
+        cardEl.classList.add('shift-in', 'shimmer-active');
+
+        playSound('shimmer');
+        vibrateDevice([50, 90, 50]);
+    }
+
+    // Highlight Highest Bidder Glow on Top Card
+    const leaderPill = qs('#highest-bidder-pill');
+    cardEl.classList.remove('lead-me', 'lead-opp');
+    leaderPill.classList.remove('me', 'opp');
+
+    if (state.auction.highestBidder === myRole) {
+        cardEl.classList.add('lead-me');
+        leaderPill.classList.add('me');
+        leaderPill.innerText = `HIGHEST: ${me.name.toUpperCase()}`;
+    } else if (state.auction.highestBidder === oppRole) {
+        cardEl.classList.add('lead-opp');
+        leaderPill.classList.add('opp');
+        leaderPill.innerText = `HIGHEST: ${opp.name.toUpperCase()}`;
+    } else {
+        leaderPill.innerText = `OPENING BID: ₹1+`;
+    }
+
+    // 6. Turn Controls & Insufficient Funds Check
     const isMyTurn = state.auction.turn === myRole;
     const canAfford = me.funds > state.auction.currentBid;
-    
+
     const input = qs('#bid-input');
     const btnBid = qs('#btn-bid');
     const btnLeave = qs('#btn-leave');
     const indicator = qs('#turn-indicator');
-    
-    if(isMyTurn) {
-        indicator.innerText = "YOUR TURN";
-        indicator.style.background = "#22c55e";
-        indicator.style.color = "#000";
+
+    qs('#status-me').classList.toggle('active', isMyTurn);
+    qs('#status-opp').classList.toggle('active', !isMyTurn);
+
+    if (previousTurn !== state.auction.turn || state.auction.bidCount !== previousBidCount) {
+        resetTurnTimer(isMyTurn, false);
+        if (isMyTurn && previousTurn !== null) {
+            vibrateDevice(45);
+        }
+        previousTurn = state.auction.turn;
+    }
+
+    if (isMyTurn) {
         btnLeave.disabled = false;
-        
-        if(canAfford) {
+        if (canAfford) {
+            indicator.innerText = `YOUR TURN • MIN BID ₹${state.auction.currentBid + 1}`;
+            indicator.style.background = "#10b981";
+            indicator.style.color = "#052e16";
             btnBid.disabled = false;
             input.disabled = false;
+            input.placeholder = `Min ₹${state.auction.currentBid + 1}`;
         } else {
+            indicator.innerText = `INSUFFICIENT FUNDS (₹${me.funds} LEFT) — CLICK LEAVE`;
+            indicator.style.background = "#ef4444";
+            indicator.style.color = "#fff";
             btnBid.disabled = true;
             input.disabled = true;
-            input.placeholder = "Insufficient Funds";
+            input.value = '';
+            input.placeholder = "No Funds Left";
             playSound('error');
+            vibrateDevice([120, 50, 120]);
         }
     } else {
-        indicator.innerText = "OPPONENT'S TURN";
-        indicator.style.background = "#000";
+        indicator.innerText = `WAITING FOR ${opp.name.toUpperCase()}...`;
+        indicator.style.background = "#090d16";
         indicator.style.color = "#94a3b8";
         btnBid.disabled = true;
         btnLeave.disabled = true;
         input.disabled = true;
+        input.placeholder = "Opponent's Turn";
     }
 
-    // Trigger Arm & Paddle Animation based on DB bid counts
-    if(state.auction.bidCount > previousBidCount && state.auction.highestBidder) {
+    // 7. Trigger Animated SVG Bidding Paddle on New Bid
+    if (state.auction.bidCount > previousBidCount && state.auction.highestBidder) {
         playSound('bid');
-        const targetRoleId = state.auction.highestBidder === myRole ? 'me' : 'opp';
+        vibrateDevice(40);
+
+        const isMeBidder = state.auction.highestBidder === myRole;
+        const targetRoleId = isMeBidder ? 'me' : 'opp';
+        const otherRoleId = isMeBidder ? 'opp' : 'me';
+
+        const paddleRig = qs(`#pad-${targetRoleId}`);
+        const otherPaddleRig = qs(`#pad-${otherRoleId}`);
         const paddleText = qs(`#padval-${targetRoleId}`);
-        const joint = qs(`#joint-${targetRoleId}`);
-        
-        if(paddleText && joint) {
-            paddleText.innerText = state.auction.currentBid;
-            joint.classList.add('raised');
-            setTimeout(() => joint.classList.remove('raised'), 1500);
+        const avatarFig = qs(`#fig-${targetRoleId}`);
+
+        if (paddleText && paddleRig) {
+            paddleText.textContent = `₹${state.auction.currentBid}`;
+            otherPaddleRig.classList.remove('raised');
+            paddleRig.classList.add('raised');
+
+            avatarFig.classList.remove('bidding-bounce');
+            void avatarFig.offsetWidth;
+            avatarFig.classList.add('bidding-bounce');
+
+            if (isMeBidder) {
+                if (paddleTimeoutMe) clearTimeout(paddleTimeoutMe);
+                paddleTimeoutMe = setTimeout(() => paddleRig.classList.remove('raised'), 2200);
+            } else {
+                if (paddleTimeoutOpp) clearTimeout(paddleTimeoutOpp);
+                paddleTimeoutOpp = setTimeout(() => paddleRig.classList.remove('raised'), 2200);
+            }
         }
         previousBidCount = state.auction.bidCount;
     }
 }
 
+/* --- PLAYER ACTIONS: BID & LEAVE --- */
 function placeBid() {
-    const amount = parseInt(qs('#bid-input').value);
+    const rawVal = qs('#bid-input').value.trim();
+    const amount = parseInt(rawVal, 10);
     const state = localState;
     const myFunds = state.players[myRole].funds;
-    
-    if(isNaN(amount) || amount <= state.auction.currentBid) {
+    const minBid = state.auction.currentBid + 1;
+
+    if (isNaN(amount) || amount < minBid) {
         playSound('error');
-        alert('Bid must be higher than current bid.');
+        vibrateDevice([100, 40, 100]);
+        showToast(`Bid must be at least ₹${minBid}!`, "error");
         return;
     }
-    if(amount > myFunds) {
+
+    if (amount > myFunds) {
         playSound('error');
-        alert('Insufficient funds.');
+        vibrateDevice([140, 50, 140]);
+        showToast(`You only have ₹${myFunds} available!`, "error");
         return;
     }
-    
+
     qs('#bid-input').value = '';
     roomRef.child('auction').update({
         currentBid: amount,
@@ -578,47 +1863,97 @@ function placeBid() {
 }
 
 function leaveBid() {
-    playSound('leave');
     const state = localState;
+    if (!state || state.phase !== 'bidding') return;
+
     const auction = state.auction;
-    
     let updates = {};
     const nextIndex = auction.index + 1;
+
     updates['auction/index'] = nextIndex;
     updates['auction/currentBid'] = 0;
     updates['auction/highestBidder'] = null;
     updates['auction/bidCount'] = 0;
-    
-    if(auction.highestBidder) {
+
+    if (auction.highestBidder) {
         playSound('sold');
+        vibrateDevice([80, 40, 120]);
+
         const winner = auction.highestBidder;
+        const winnerName = state.players[winner].name;
         const item = state.items[auction.index];
         const cost = auction.currentBid;
-        
+
         updates[`players/${winner}/funds`] = state.players[winner].funds - cost;
         updates[`players/${winner}/score`] = state.players[winner].score + item.points;
-        
-        roomRef.child(`players/${winner}/items`).push(item);
+
+        roomRef.child(`players/${winner}/items`).push({
+            name: item.name,
+            points: item.points,
+            cost: cost
+        });
+
+        showToast(`Sold ${item.name} to ${winnerName} for ₹${cost}!`, "success");
+    } else {
+        playSound('leave');
+        vibrateDevice(50);
+        showToast("No bids placed. Item skipped!", "info");
     }
-    
-    if(nextIndex >= 10) {
+
+    if (nextIndex >= 10) {
         updates['phase'] = 'end';
     } else {
-        updates['auction/turn'] = auction.highestBidder ? auction.highestBidder : myRole;
+        updates['auction/turn'] = auction.highestBidder ? auction.highestBidder : oppRole;
     }
-    
+
     roomRef.update(updates);
 }
 
-function toggleInventory() {
-    const p = qs('#inventory-panel');
-    p.classList.toggle('open');
+/* --- CONFETTI VICTORY ENGINE --- */
+function startConfetti() {
+    const canvas = qs('#confetti-canvas');
+    canvas.classList.remove('hidden');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const pieces = Array.from({ length: 75 }).map(() => ({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height - canvas.height,
+        w: Math.random() * 9 + 5,
+        h: Math.random() * 6 + 4,
+        color: ['#3b82f6', '#f97316', '#10b981', '#f59e0b', '#ec4899'][Math.floor(Math.random() * 5)],
+        vy: Math.random() * 3 + 2,
+        vx: (Math.random() - 0.5) * 2,
+        angle: Math.random() * 360
+    }));
+
+    let frames = 0;
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        pieces.forEach(p => {
+            p.y += p.vy;
+            p.x += p.vx;
+            p.angle += 4;
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            ctx.rotate((p.angle * Math.PI) / 180);
+            ctx.fillStyle = p.color;
+            ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+            ctx.restore();
+        });
+        frames++;
+        if (frames < 240) requestAnimationFrame(draw);
+        else canvas.classList.add('hidden');
+    }
+    draw();
 }
 
-// Ensure the room is cleaned from the database when the game is completely over
+/* --- CLEANUP ROOM ON EXIT --- */
 function endGameCleanup() {
-    if(myRole === 'p1' && roomRef) {
-        roomRef.remove().then(() => {
+    if (timerInterval) clearInterval(timerInterval);
+    if (roomRef) {
+        roomRef.remove().finally(() => {
             location.href = location.pathname;
         });
     } else {
