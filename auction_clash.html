@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Auction Clash</title>
-    <!-- Using Realtime Database to utilize onDisconnect().remove() for automatic session clearing -->
+    <!-- Firebase Realtime Database included -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
@@ -35,6 +35,10 @@
         .btn:active { transform: scale(0.96); }
         .btn:disabled { opacity: 0.5; cursor: not-allowed; }
         
+        /* Spinner */
+        .spinner { width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.1); border-top: 4px solid var(--blue); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 15px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
         /* Main Layout */
         #game-screen { flex: 1; display: flex; flex-direction: column; position: relative; }
         
@@ -59,14 +63,38 @@
         .dash-stats { font-size: 12px; color: #94a3b8; line-height: 1.4; }
         .dash-funds { font-weight: 800; font-size: 18px; color: #fff; }
         
-        /* Avatars & Paddles */
-        .avatar-wrap { position: relative; width: 80px; height: 100px; display: flex; justify-content: center; }
-        .avatar-icon { font-size: 70px; z-index: 2; position: absolute; bottom: 0; }
-        .paddle { position: absolute; bottom: 30px; right: -20px; width: 40px; height: 60px; background: #fff; color: #000; display: flex; justify-content: center; align-items: flex-start; padding-top: 10px; font-weight: 800; font-size: 20px; border-radius: 8px; z-index: 3; transform-origin: bottom left; transform: rotate(90deg); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); opacity: 0; border: 2px solid #000; box-shadow: 2px 2px 10px rgba(0,0,0,0.5); }
-        .paddle::after { content: ''; position: absolute; bottom: -30px; left: 15px; width: 6px; height: 30px; background: #8b4513; }
-        .paddle.raised { transform: rotate(15deg); opacity: 1; }
-        .p-orange .paddle { left: -20px; right: auto; transform-origin: bottom right; transform: rotate(-90deg); }
-        .p-orange .paddle.raised { transform: rotate(-15deg); opacity: 1; }
+        /* Animated Avatars & Paddles */
+        .avatar-wrap { position: relative; width: 140px; height: 160px; display: flex; justify-content: center; align-items: flex-end; }
+        .character { position: relative; width: 100%; height: 100%; display: flex; justify-content: center; }
+
+        .torso { position: absolute; bottom: 20px; width: 70px; height: 60px; border-radius: 35px 35px 0 0; z-index: 2; }
+        .p-blue .torso { background: #2563eb; }
+        .p-orange .torso { background: #ea580c; }
+
+        .head { position: absolute; bottom: 75px; width: 45px; height: 45px; background: #ffedd5; border-radius: 50%; z-index: 3; box-shadow: inset -5px -5px 10px rgba(0,0,0,0.1); }
+        .hair { background: #0f172a; position: absolute; }
+        .gender-M .hair { width: 45px; height: 18px; border-radius: 20px 20px 0 0; top: -2px; left: 0; }
+        .gender-F .hair { width: 55px; height: 40px; border-radius: 25px 25px 10px 10px; top: -2px; left: -5px; z-index: -1; }
+
+        .desk { position: absolute; bottom: 0; width: 140px; height: 25px; background: #1e293b; border-top: 3px solid #334155; z-index: 5; border-radius: 4px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+
+        .arm-joint { position: absolute; bottom: 55px; z-index: 4; width: 20px; height: 20px; border-radius: 50%; transform-origin: center center; transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .p-blue .arm-joint { right: 25px; transform: rotate(20deg); }
+        .p-orange .arm-joint { left: 25px; transform: rotate(-20deg); }
+
+        .arm { position: absolute; top: 10px; left: 4px; width: 12px; height: 45px; background: #ffedd5; border-radius: 6px; }
+
+        .paddle { position: absolute; top: 50px; left: -14px; display: flex; flex-direction: column; align-items: center; }
+        .paddle-stick { width: 6px; height: 25px; background: #8b4513; border-radius: 3px; }
+        .paddle-board { width: 45px; height: 35px; background: #fff; border: 2px solid #000; border-radius: 4px; display: flex; align-items: center; justify-content: center; transform: translateY(-5px); box-shadow: 0 5px 10px rgba(0,0,0,0.3); }
+        .paddle-text { font-weight: 800; font-size: 16px; color: #000; transition: transform 0.5s; display: inline-block; }
+
+        /* The Raise Animation Keyframes/Classes */
+        .p-blue .arm-joint.raised { transform: rotate(-150deg); }
+        .p-blue .arm-joint.raised .paddle-text { transform: rotate(150deg); }
+
+        .p-orange .arm-joint.raised { transform: rotate(150deg); }
+        .p-orange .arm-joint.raised .paddle-text { transform: rotate(-150deg); }
 
         /* Bottom: Controls */
         .controls { background: var(--surface); border-top: 1px solid var(--border); padding: 15px; display: flex; flex-direction: column; gap: 10px; padding-bottom: calc(15px + env(safe-area-inset-bottom)); }
@@ -84,9 +112,6 @@
         .inv-list { margin-top: 15px; font-size: 14px; }
         .inv-list div { padding: 10px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; }
         
-        .draft-list { max-height: 200px; overflow-y: auto; text-align: left; margin-bottom: 15px; }
-        .draft-item { padding: 10px; background: #000; border-radius: 8px; margin-bottom: 5px; display: flex; justify-content: space-between; font-size: 14px; }
-
         .link-box { font-family: monospace; background: #000; padding: 12px; border-radius: 8px; margin: 15px 0; border: 1px dashed #fff; word-break: break-all; }
     </style>
 </head>
@@ -96,7 +121,7 @@
 <div id="setup-screen" class="overlay">
     <div class="card">
         <h2>Enter Auction</h2>
-        <!-- Default name pre-filled dynamically based on integrated profile data context -->
+        <!-- Name pre-filled dynamically -->
         <input type="text" id="player-name" placeholder="Your Name" value="சிவ மணிகண்டன்">
         <select id="player-gender">
             <option value="M">Male</option>
@@ -119,14 +144,22 @@
 <div id="draft-screen" class="overlay hidden">
     <div class="card">
         <h2>Draft Celebrities</h2>
-        <p style="font-size:12px; color:#94a3b8;">Enter 5 items/celebrities for the auction.</p>
-        <div style="display:flex; gap:10px; margin-bottom:15px;">
-            <input type="text" id="draft-input" placeholder="e.g. Elon Musk" style="margin:0;">
-            <button class="btn" style="width:auto; padding:0 20px;" onclick="addDraftItem()">ADD</button>
+        <p style="font-size:12px; color:#94a3b8; margin-bottom: 20px;">Enter 5 items or celebrities for the auction.</p>
+        
+        <div id="draft-inputs-container" style="display:flex; flex-direction:column; gap:10px; margin-bottom:15px;">
+            <input type="text" class="draft-in" placeholder="Celebrity 1">
+            <input type="text" class="draft-in" placeholder="Celebrity 2">
+            <input type="text" class="draft-in" placeholder="Celebrity 3">
+            <input type="text" class="draft-in" placeholder="Celebrity 4">
+            <input type="text" class="draft-in" placeholder="Celebrity 5">
         </div>
-        <div class="draft-list" id="my-drafts"></div>
-        <button class="btn" id="btn-submit-draft" onclick="submitDraft()" disabled>Submit (0/5)</button>
-        <p id="draft-wait" class="hidden" style="font-size:12px; color:#ef4444; margin-top:10px;">Waiting for opponent's draft...</p>
+        
+        <button class="btn hidden" id="btn-submit-draft" onclick="submitDraft()">Submit Final List</button>
+        
+        <div id="draft-spinner" class="hidden">
+            <div class="spinner"></div>
+            <p style="font-size:14px; color:#ef4444; font-weight: 600;">Waiting for opponent to submit...</p>
+        </div>
     </div>
 </div>
 
@@ -134,7 +167,7 @@
     <div class="card">
         <h1 id="win-title" style="font-size:36px; margin:0;">...</h1>
         <p id="win-desc" style="color:#94a3b8; margin:15px 0 25px;"></p>
-        <button class="btn" onclick="location.href = location.pathname">Leave Room</button>
+        <button class="btn" onclick="endGameCleanup()">Leave Room</button>
     </div>
 </div>
 
@@ -159,10 +192,7 @@
                     Score: <span id="score-me">0</span>
                 </div>
             </div>
-            <div class="avatar-wrap">
-                <div class="avatar-icon" id="ava-me">🧑</div>
-                <div class="paddle" id="pad-me"><span>0</span></div>
-            </div>
+            <div class="avatar-wrap" id="wrap-me"></div>
         </div>
         
         <div class="player-zone p-orange">
@@ -173,10 +203,7 @@
                     Score: <span id="score-opp">0</span>
                 </div>
             </div>
-            <div class="avatar-wrap">
-                <div class="avatar-icon" id="ava-opp">🧑</div>
-                <div class="paddle" id="pad-opp"><span>0</span></div>
-            </div>
+            <div class="avatar-wrap" id="wrap-opp"></div>
         </div>
     </div>
     
@@ -258,7 +285,7 @@ function playSound(type) {
     }
 }
 
-/* Firebase Configuration (Using provided Realtime DB config for onDisconnect capability) */
+/* Firebase Configuration */
 const firebaseConfig = {
     apiKey: "AIzaSyCkpSNJP6-puaQsB9H5ZX_pp9alrbR58lI",
     authDomain: "pinga-8bba9.firebaseapp.com",
@@ -275,9 +302,7 @@ const db = firebase.database();
 /* Game State */
 let roomId, myRole, oppRole;
 let roomRef;
-let myDrafts = [];
 let localState = {};
-let previousTurnId = null; 
 let previousBidCount = 0;
 
 function qs(sel) { return document.querySelector(sel); }
@@ -315,8 +340,7 @@ function initPlayer() {
         oppRole = 'p2';
         roomRef = db.ref('auctions/' + roomId);
         
-        // Critical: Clear DB room automatically on disconnect to keep DB clean as requested
-        roomRef.onDisconnect().remove();
+        // Removed onDisconnect().remove() to allow safe backgrounding/minimization
         
         roomRef.set({
             phase: 'waiting',
@@ -331,50 +355,62 @@ function initPlayer() {
     listenToRoom();
 }
 
+/* Clipboard Logic */
 function copyLink() {
-    navigator.clipboard.writeText(qs('#invite-link').innerText);
+    const linkText = qs('#invite-link').innerText;
     const btn = qs('#share-screen .btn');
-    btn.innerText = "COPIED!";
-    setTimeout(() => btn.innerText = "Copy Link", 2000);
+    
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(linkText).then(() => {
+            btn.innerText = "COPIED!";
+            setTimeout(() => btn.innerText = "Copy Link", 2000);
+        }).catch(() => fallbackCopy(linkText, btn));
+    } else {
+        fallbackCopy(linkText, btn);
+    }
 }
 
-function getAvatar(gender) { return gender === 'M' ? '👨' : '👩'; }
-
-function addDraftItem() {
-    const input = qs('#draft-input');
-    const val = input.value.trim();
-    if(!val || myDrafts.length >= 5) return;
-    
-    myDrafts.push(val);
-    input.value = '';
-    
-    const list = qs('#my-drafts');
-    const div = document.createElement('div');
-    div.className = 'draft-item';
-    div.innerHTML = `<span>${val}</span> <span style="color:#ef4444;cursor:pointer" onclick="removeDraft(${myDrafts.length-1})">X</span>`;
-    list.appendChild(div);
-    
-    const btn = qs('#btn-submit-draft');
-    btn.innerText = `Submit (${myDrafts.length}/5)`;
-    if(myDrafts.length === 5) btn.disabled = false;
+function fallbackCopy(text, btn) {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.top = "0";
+    textArea.style.left = "0";
+    textArea.style.position = "fixed";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    try {
+        document.execCommand('copy');
+        btn.innerText = "COPIED!";
+        setTimeout(() => btn.innerText = "Copy Link", 2000);
+    } catch (err) {
+        console.error('Fallback copy failed', err);
+        alert("Auto-copy blocked by browser. Please select the link and copy it manually.");
+    }
+    document.body.removeChild(textArea);
 }
 
-function removeDraft(idx) {
-    myDrafts.splice(idx, 1);
-    qs('#my-drafts').innerHTML = '';
-    const drafts = [...myDrafts];
-    myDrafts = [];
-    drafts.forEach(d => { qs('#draft-input').value = d; addDraftItem(); });
-    qs('#btn-submit-draft').disabled = true;
-    qs('#btn-submit-draft').innerText = `Submit (${myDrafts.length}/5)`;
-}
+/* Drafting Logic */
+document.querySelectorAll('.draft-in').forEach(input => {
+    input.addEventListener('input', () => {
+        const allFilled = Array.from(document.querySelectorAll('.draft-in')).every(i => i.value.trim().length > 0);
+        if(allFilled) qs('#btn-submit-draft').classList.remove('hidden');
+        else qs('#btn-submit-draft').classList.add('hidden');
+    });
+});
 
 function submitDraft() {
+    qs('#draft-inputs-container').classList.add('hidden');
     qs('#btn-submit-draft').classList.add('hidden');
-    qs('#draft-wait').classList.remove('hidden');
+    qs('#draft-spinner').classList.remove('hidden');
     
-    const items = myDrafts.map(name => ({ name, points: Math.floor(Math.random() * 401) + 100 })); // 100-500
-    roomRef.child('drafts/' + myRole).set(items);
+    const inputs = document.querySelectorAll('.draft-in');
+    const items = Array.from(inputs).map(i => ({ 
+        name: i.value.trim(), 
+        points: Math.floor(Math.random() * 401) + 100 
+    }));
+    
+    roomRef.child('drafts/' + myRole).set({ ready: true, items: items });
 }
 
 function listenToRoom() {
@@ -383,20 +419,18 @@ function listenToRoom() {
         if(!state) return;
         localState = state;
         
-        // Waiting -> Drafting
         if(state.phase === 'waiting' && state.players.p2 && myRole === 'p1') {
             roomRef.update({ phase: 'drafting' });
             qs('#share-screen').classList.add('hidden');
             qs('#draft-screen').classList.remove('hidden');
         }
         
-        // Drafting -> Setup Array -> Bidding
-        if(state.phase === 'drafting' && state.drafts && state.drafts.p1 && state.drafts.p2 && myRole === 'p1') {
-            const allItems = [...state.drafts.p1, ...state.drafts.p2].sort(() => Math.random() - 0.5);
+        // Robust state sync: Only proceeds when BOTH players successfully uploaded their ready flag and items array
+        if(state.phase === 'drafting' && state.drafts && state.drafts.p1 && state.drafts.p1.ready && state.drafts.p2 && state.drafts.p2.ready && myRole === 'p1') {
+            const allItems = [...state.drafts.p1.items, ...state.drafts.p2.items].sort(() => Math.random() - 0.5);
             roomRef.update({ phase: 'bidding', items: allItems, drafts: null });
         }
         
-        // Bidding UI Updates
         if(state.phase === 'bidding' || state.phase === 'end') {
             qs('#setup-screen').classList.add('hidden');
             qs('#share-screen').classList.add('hidden');
@@ -406,22 +440,42 @@ function listenToRoom() {
     });
 }
 
+function getCharacterHTML(gender, roleId) {
+    return `
+    <div class="character gender-${gender}">
+        <div class="torso"></div>
+        <div class="head"><div class="hair"></div></div>
+        <div class="arm-joint" id="joint-${roleId}">
+            <div class="arm"></div>
+            <div class="paddle">
+                <div class="paddle-stick"></div>
+                <div class="paddle-board">
+                    <span class="bid-val paddle-text" id="padval-${roleId}">0</span>
+                </div>
+            </div>
+        </div>
+        <div class="desk"></div>
+    </div>`;
+}
+
 function renderGame(state) {
     const me = state.players[myRole];
     const opp = state.players[oppRole];
     
-    // Header & Dashboards
     qs('#name-me').innerText = me.name;
-    qs('#ava-me').innerText = getAvatar(me.gender);
     qs('#funds-me').innerText = `₹${me.funds}`;
     qs('#score-me').innerText = me.score;
     
     qs('#name-opp').innerText = opp.name;
-    qs('#ava-opp').innerText = getAvatar(opp.gender);
     qs('#funds-opp').innerText = `₹${opp.funds}`;
     qs('#score-opp').innerText = opp.score;
     
-    // Inventory Updates
+    // Inject Avatars only once to preserve CSS transitions
+    if(qs('#wrap-me').innerHTML.trim() === '') {
+        qs('#wrap-me').innerHTML = getCharacterHTML(me.gender, 'me');
+        qs('#wrap-opp').innerHTML = getCharacterHTML(opp.gender, 'opp');
+    }
+    
     const renderInv = (player, listId) => {
         const list = qs(listId);
         list.innerHTML = '';
@@ -434,7 +488,6 @@ function renderGame(state) {
     renderInv(me, '#inv-me');
     renderInv(opp, '#inv-opp');
 
-    // End Game Check
     if(state.phase === 'end') {
         qs('#end-screen').classList.remove('hidden');
         const winTitle = qs('#win-title');
@@ -445,14 +498,12 @@ function renderGame(state) {
         return;
     }
 
-    // Auction Stage
     const item = state.items[state.auction.index];
     qs('#item-counter').innerText = `ITEM ${state.auction.index + 1}/10`;
     qs('#item-name').innerText = item.name;
     qs('#item-score').innerText = `Points: ${item.points}`;
     qs('#current-bid-display').innerText = `₹ ${state.auction.currentBid}`;
     
-    // Controls & Turn
     const isMyTurn = state.auction.turn === myRole;
     const canAfford = me.funds > state.auction.currentBid;
     
@@ -485,14 +536,18 @@ function renderGame(state) {
         input.disabled = true;
     }
 
-    // Trigger Paddle Animation if a new bid was placed
+    // Trigger Arm & Paddle Animation based on DB bid counts
     if(state.auction.bidCount > previousBidCount && state.auction.highestBidder) {
         playSound('bid');
-        const padId = state.auction.highestBidder === myRole ? '#pad-me' : '#pad-opp';
-        const paddle = qs(padId);
-        paddle.querySelector('span').innerText = state.auction.currentBid;
-        paddle.classList.add('raised');
-        setTimeout(() => paddle.classList.remove('raised'), 2000);
+        const targetRoleId = state.auction.highestBidder === myRole ? 'me' : 'opp';
+        const paddleText = qs(`#padval-${targetRoleId}`);
+        const joint = qs(`#joint-${targetRoleId}`);
+        
+        if(paddleText && joint) {
+            paddleText.innerText = state.auction.currentBid;
+            joint.classList.add('raised');
+            setTimeout(() => joint.classList.remove('raised'), 1500);
+        }
         previousBidCount = state.auction.bidCount;
     }
 }
@@ -534,7 +589,6 @@ function leaveBid() {
     updates['auction/highestBidder'] = null;
     updates['auction/bidCount'] = 0;
     
-    // Whoever bid highest wins it. If no one bid, it gets skipped.
     if(auction.highestBidder) {
         playSound('sold');
         const winner = auction.highestBidder;
@@ -544,14 +598,12 @@ function leaveBid() {
         updates[`players/${winner}/funds`] = state.players[winner].funds - cost;
         updates[`players/${winner}/score`] = state.players[winner].score + item.points;
         
-        // Push item to winner's inventory
         roomRef.child(`players/${winner}/items`).push(item);
     }
     
     if(nextIndex >= 10) {
         updates['phase'] = 'end';
     } else {
-        // Next item starts with the person who clicked leave (or logic of choice)
         updates['auction/turn'] = auction.highestBidder ? auction.highestBidder : myRole;
     }
     
@@ -561,6 +613,17 @@ function leaveBid() {
 function toggleInventory() {
     const p = qs('#inventory-panel');
     p.classList.toggle('open');
+}
+
+// Ensure the room is cleaned from the database when the game is completely over
+function endGameCleanup() {
+    if(myRole === 'p1' && roomRef) {
+        roomRef.remove().then(() => {
+            location.href = location.pathname;
+        });
+    } else {
+        location.href = location.pathname;
+    }
 }
 </script>
 </body>
