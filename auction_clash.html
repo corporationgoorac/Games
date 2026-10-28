@@ -136,12 +136,16 @@
             background: rgba(19, 27, 46, 0.9);
             border: 1px solid var(--border);
             border-radius: 24px;
-            padding: 26px 22px;
+            padding: 22px 20px;
             width: 100%;
-            max-width: 390px;
+            max-width: 410px;
+            max-height: 92dvh;
+            display: flex;
+            flex-direction: column;
             text-align: center;
             box-shadow: 0 25px 50px rgba(0, 0, 0, 0.6);
             backdrop-filter: blur(12px);
+            overflow-y: auto;
         }
 
         .card h2 {
@@ -156,9 +160,9 @@
             background: #090d16;
             border: 2px solid #26334d;
             color: #fff;
-            padding: 13px 15px;
+            padding: 12px 15px;
             border-radius: 12px;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
             font-size: 15px;
             font-weight: 600;
             outline: none;
@@ -169,6 +173,102 @@
         input:focus, select:focus {
             border-color: var(--blue);
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+
+        /* --- 16-CHARACTER AVATAR SELECTION GALLERY --- */
+        .avatar-picker-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 2px 0 8px;
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        .selected-style-pill {
+            color: #60a5fa;
+            background: rgba(59, 130, 246, 0.15);
+            border: 1px solid rgba(59, 130, 246, 0.4);
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 800;
+        }
+
+        .avatar-picker-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            max-height: 215px;
+            overflow-y: auto;
+            padding: 6px;
+            margin-bottom: 14px;
+            background: rgba(9, 13, 22, 0.75);
+            border: 1px solid #26334d;
+            border-radius: 16px;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+        }
+
+        .avatar-picker-grid::-webkit-scrollbar {
+            width: 5px;
+        }
+        .avatar-picker-grid::-webkit-scrollbar-thumb {
+            background: rgba(59, 130, 246, 0.4);
+            border-radius: 4px;
+        }
+
+        .avatar-option-card {
+            background: rgba(19, 27, 46, 0.9);
+            border: 2px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 6px 4px 5px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+            position: relative;
+        }
+
+        .avatar-option-card:hover {
+            border-color: rgba(59, 130, 246, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .avatar-option-card.selected {
+            border-color: var(--blue);
+            background: rgba(59, 130, 246, 0.22);
+            box-shadow: 0 0 14px rgba(59, 130, 246, 0.45);
+            transform: scale(1.03);
+        }
+
+        .avatar-option-card img {
+            width: 52px;
+            height: 52px;
+            object-fit: contain;
+            filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.45));
+            pointer-events: none;
+        }
+
+        .avatar-option-label {
+            font-size: 9px;
+            font-weight: 700;
+            color: #cbd5e1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            width: 100%;
+            text-align: center;
+        }
+
+        .avatar-option-card.selected .avatar-option-label {
+            color: #ffffff;
+            font-weight: 800;
         }
 
         .btn {
@@ -185,6 +285,7 @@
             text-transform: uppercase;
             letter-spacing: 0.8px;
             box-shadow: 0 6px 20px rgba(37, 99, 235, 0.35);
+            flex-shrink: 0;
         }
 
         .btn:active { transform: scale(0.96); }
@@ -570,7 +671,7 @@
         }
         @keyframes pulseText { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
 
-        /* --- AVATAR & ANIMATED PADDLE STAGE + ADVANCED PHYSICS --- */
+        /* --- AVATAR & ANIMATED PADDLE STAGE + UNIFIED TORSO PHYSICS --- */
         .avatar-stage {
             position: relative;
             flex: 1;
@@ -616,18 +717,20 @@
             border: 1px solid #fca5a5;
         }
 
+        /* UNIFIED TORSO CONTAINER: Body, Hands, and Paddle move together as one physical unit */
         .avatar-figure {
             position: relative;
-            width: 122px;
-            height: 132px;
+            width: 116px;
+            height: 116px;
             display: flex;
             justify-content: center;
             align-items: flex-end;
             z-index: 3;
             transform-origin: bottom center;
+            margin-bottom: -4px;
         }
 
-        /* Subtle Idle Physics Breathing */
+        /* Subtle Idle Physics Breathing on Unified Torso */
         .avatar-figure.idle-physics {
             animation: avatarIdleBreathe 3.2s ease-in-out infinite;
         }
@@ -638,94 +741,150 @@
         }
 
         .dicebear-img {
-            width: 108px;
-            height: 108px;
+            width: 112px;
+            height: 112px;
             object-fit: contain;
             filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.6));
             transition: transform 0.3s ease, filter 0.3s ease;
-            z-index: 3;
+            z-index: 4;
             transform-origin: bottom center;
         }
 
-        /* Physics 1: Aggressive Bid Bounce (Squash & Stretch) */
-        .avatar-figure.bidding-bounce .dicebear-img {
+        /* Physics 1: Unified Torso Aggressive Bid Bounce (Body + Arms + Paddle jump together) */
+        .avatar-figure.bidding-bounce {
             animation: charBidSpring 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
 
         @keyframes charBidSpring {
             0% { transform: translateY(0) scaleX(1) scaleY(1); }
-            20% { transform: translateY(4px) scaleX(1.12) scaleY(0.88); }
-            55% { transform: translateY(-16px) scaleX(0.93) scaleY(1.1); }
-            80% { transform: translateY(2px) scaleX(1.04) scaleY(0.96); }
+            20% { transform: translateY(4px) scaleX(1.1) scaleY(0.9); }
+            55% { transform: translateY(-15px) scaleX(0.94) scaleY(1.08); }
+            80% { transform: translateY(2px) scaleX(1.03) scaleY(0.97); }
             100% { transform: translateY(0) scaleX(1) scaleY(1); }
         }
 
-        /* Physics 2: Winner Multi-Jump Squash & Stretch Celebration */
-        .avatar-figure.winner-celebrate .dicebear-img {
+        /* Physics 2: Unified Torso Winner Multi-Jump Celebration */
+        .avatar-figure.winner-celebrate {
             animation: winnerJoyJump 0.85s cubic-bezier(0.28, 0.84, 0.42, 1) 3;
+        }
+        .avatar-figure.winner-celebrate .dicebear-img {
             filter: drop-shadow(0 0 18px rgba(16, 185, 129, 0.85));
         }
 
         @keyframes winnerJoyJump {
             0% { transform: translateY(0) scaleX(1) scaleY(1) rotate(0deg); }
-            15% { transform: translateY(6px) scaleX(1.16) scaleY(0.84) rotate(-3deg); }
-            45% { transform: translateY(-24px) scaleX(0.9) scaleY(1.14) rotate(5deg); }
-            70% { transform: translateY(-10px) scaleX(0.96) scaleY(1.05) rotate(-4deg); }
-            88% { transform: translateY(3px) scaleX(1.08) scaleY(0.92) rotate(1deg); }
+            15% { transform: translateY(5px) scaleX(1.14) scaleY(0.86) rotate(-3deg); }
+            45% { transform: translateY(-22px) scaleX(0.92) scaleY(1.12) rotate(4deg); }
+            70% { transform: translateY(-8px) scaleX(0.96) scaleY(1.04) rotate(-3deg); }
+            88% { transform: translateY(3px) scaleX(1.06) scaleY(0.94) rotate(1deg); }
             100% { transform: translateY(0) scaleX(1) scaleY(1) rotate(0deg); }
         }
 
-        /* Physics 3: Loser Dead-Weight Gravity Slouch & Frustration Shake */
-        .avatar-figure.loser-tantrum .dicebear-img {
+        /* Physics 3: Unified Torso Loser Dead-Weight Gravity Slouch & Frustration Shake */
+        .avatar-figure.loser-tantrum {
             animation: loserAngrySlouch 2.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards;
+        }
+        .avatar-figure.loser-tantrum .dicebear-img {
             filter: drop-shadow(0 0 14px rgba(239, 68, 68, 0.65)) saturate(0.85);
         }
 
         @keyframes loserAngrySlouch {
             0% { transform: translateY(0) scale(1) rotate(0deg); }
-            10% { transform: translateX(-6px) rotate(-6deg) scale(1.03); }
-            20% { transform: translateX(6px) rotate(6deg) scale(1.03); }
+            10% { transform: translateX(-6px) rotate(-6deg) scale(1.02); }
+            20% { transform: translateX(6px) rotate(6deg) scale(1.02); }
             30% { transform: translateX(-5px) rotate(-5deg); }
             40% { transform: translateX(5px) rotate(5deg); }
-            55% { transform: translateY(10px) scaleX(1.09) scaleY(0.86) rotate(-4deg); }
-            85% { transform: translateY(10px) scaleX(1.09) scaleY(0.86) rotate(-4deg); }
+            55% { transform: translateY(9px) scaleX(1.08) scaleY(0.88) rotate(-4deg); }
+            85% { transform: translateY(9px) scaleX(1.08) scaleY(0.88) rotate(-4deg); }
             100% { transform: translateY(0) scaleX(1) scaleY(1) rotate(0deg); }
         }
 
-        /* Physics-Driven Articulated Hands for Winner / Loser */
+        /* SHOULDER-LOCKED ARTICULATED ARMS & HANDS (Physically attached to the body shoulders) */
         .chem-hand {
             position: absolute;
-            width: 34px;
-            height: 70px;
-            bottom: 24px;
-            z-index: 7;
-            opacity: 0;
+            width: 32px;
+            height: 66px;
+            bottom: 6px;
+            z-index: 5;
+            opacity: 1;
             pointer-events: none;
-            transform-origin: bottom center;
             transition: opacity 0.2s ease, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-            filter: drop-shadow(0 5px 10px rgba(0,0,0,0.6));
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.55));
         }
 
-        .chem-hand.hand-left { left: -10px; transform: translateY(25px) rotate(-35deg) scale(0.7); }
-        .chem-hand.hand-right { right: -10px; transform: translateY(25px) rotate(35deg) scale(0.7); }
+        /* Pivot point is anchored right inside the character's left & right shoulder sockets */
+        .chem-hand.hand-left {
+            left: 11px;
+            transform-origin: 22px 54px;
+            transform: translateY(22px) rotate(-142deg) scale(0.82);
+        }
+        .chem-hand.hand-right {
+            right: 11px;
+            transform-origin: 10px 54px;
+            transform: translateY(22px) rotate(142deg) scale(0.82);
+        }
 
-        /* Winner raises both hands & waves */
+        /* Idle breathing micro-motion on resting arms */
+        .avatar-figure.idle-physics .chem-hand.hand-left {
+            animation: idleArmLeft 3.2s ease-in-out infinite;
+        }
+        .avatar-figure.idle-physics .chem-hand.hand-right {
+            animation: idleArmRight 3.2s ease-in-out infinite;
+        }
+
+        @keyframes idleArmLeft {
+            0%, 100% { transform: translateY(22px) rotate(-142deg) scale(0.82); }
+            50% { transform: translateY(21px) rotate(-136deg) scale(0.82); }
+        }
+        @keyframes idleArmRight {
+            0%, 100% { transform: translateY(22px) rotate(142deg) scale(0.82); }
+            50% { transform: translateY(21px) rotate(136deg) scale(0.82); }
+        }
+
+        /* Hide the resting arm on the paddle side while the paddle arm is actively raised */
+        .p-blue .avatar-figure.paddle-active .chem-hand.hand-right {
+            opacity: 0;
+        }
+        .p-orange .avatar-figure.paddle-active .chem-hand.hand-left {
+            opacity: 0;
+        }
+
+        /* Winner raises both arms from the shoulder sockets & waves */
         .avatar-figure.winner-celebrate .chem-hand.hand-left {
             opacity: 1;
-            animation: waveLeftHand 0.55s ease-in-out infinite alternate;
+            animation: waveLeftHand 0.48s ease-in-out infinite alternate;
         }
         .avatar-figure.winner-celebrate .chem-hand.hand-right {
             opacity: 1;
-            animation: waveRightHand 0.55s ease-in-out infinite alternate;
+            animation: waveRightHand 0.48s ease-in-out infinite alternate;
         }
 
         @keyframes waveLeftHand {
-            0% { transform: translateY(-30px) rotate(-18deg) scale(1); }
-            100% { transform: translateY(-38px) rotate(-42deg) scale(1.06); }
+            0% { transform: translateY(-6px) rotate(-22deg) scale(0.95); }
+            100% { transform: translateY(-10px) rotate(-48deg) scale(1); }
         }
         @keyframes waveRightHand {
-            0% { transform: translateY(-30px) rotate(18deg) scale(1); }
-            100% { transform: translateY(-38px) rotate(42deg) scale(1.06); }
+            0% { transform: translateY(-6px) rotate(22deg) scale(0.95); }
+            100% { transform: translateY(-10px) rotate(48deg) scale(1); }
+        }
+
+        /* Loser arms droop & shake in frustration */
+        .avatar-figure.loser-tantrum .chem-hand.hand-left {
+            animation: loserArmLeft 2.4s ease-in-out forwards;
+        }
+        .avatar-figure.loser-tantrum .chem-hand.hand-right {
+            animation: loserArmRight 2.4s ease-in-out forwards;
+        }
+
+        @keyframes loserArmLeft {
+            0%, 100% { transform: translateY(22px) rotate(-142deg) scale(0.82); }
+            15%, 35% { transform: translateY(10px) rotate(-110deg) scale(0.86); }
+            55%, 85% { transform: translateY(26px) rotate(-158deg) scale(0.8); }
+        }
+        @keyframes loserArmRight {
+            0%, 100% { transform: translateY(22px) rotate(142deg) scale(0.82); }
+            15%, 35% { transform: translateY(10px) rotate(110deg) scale(0.86); }
+            55%, 85% { transform: translateY(26px) rotate(158deg) scale(0.8); }
         }
 
         /* Anger Steam Badge for Loser */
@@ -746,23 +905,23 @@
             50% { opacity: 1; transform: scale(1.25) rotate(12deg); }
         }
 
-        /* Animated SVG Bidding Paddle with Spring & Pendulum Physics */
+        /* SHOULDER-ANCHORED SVG BIDDING PADDLE WITH CONNECTED ARM SLEEVE */
         .paddle-rig {
             position: absolute;
-            bottom: 18px;
+            bottom: 10px;
             width: 68px;
-            height: 125px;
+            height: 128px;
             z-index: 6;
             pointer-events: none;
-            transform-origin: bottom center;
+            transform-origin: 40px 118px;
             transition: transform 0.48s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.25s ease;
             opacity: 0;
         }
 
-        /* Blue player holds paddle on their right (inner arena side) */
+        /* Blue player holds paddle anchored to their right shoulder (inner arena side) */
         .p-blue .paddle-rig {
-            right: -14px;
-            transform: translateY(35px) rotate(45deg) scale(0.75);
+            right: -6px;
+            transform: translateY(18px) rotate(48deg) scale(0.75);
         }
         .p-blue .paddle-rig.raised {
             opacity: 1;
@@ -774,23 +933,23 @@
         }
 
         @keyframes bluePaddleSpring {
-            0% { transform: translateY(35px) rotate(45deg) scale(0.75); }
-            60% { transform: translateY(-28px) rotate(-18deg) scale(1.1); }
-            82% { transform: translateY(-19px) rotate(-4deg) scale(1.02); }
-            100% { transform: translateY(-22px) rotate(-8deg) scale(1.05); }
+            0% { transform: translateY(18px) rotate(48deg) scale(0.75); }
+            60% { transform: translateY(-10px) rotate(-14deg) scale(1.05); }
+            82% { transform: translateY(-5px) rotate(-2deg) scale(0.98); }
+            100% { transform: translateY(-7px) rotate(-6deg) scale(1.0); }
         }
 
         @keyframes bluePendulumDrop {
-            0% { transform: translateY(-22px) rotate(-8deg) scale(1.05); opacity: 1; }
-            45% { transform: translateY(25px) rotate(78deg) scale(0.9); opacity: 0.9; }
-            70% { transform: translateY(20px) rotate(55deg) scale(0.85); opacity: 0.6; }
-            100% { transform: translateY(38px) rotate(68deg) scale(0.75); opacity: 0; }
+            0% { transform: translateY(-7px) rotate(-6deg) scale(1.0); opacity: 1; }
+            45% { transform: translateY(16px) rotate(72deg) scale(0.88); opacity: 0.9; }
+            70% { transform: translateY(12px) rotate(52deg) scale(0.84); opacity: 0.6; }
+            100% { transform: translateY(24px) rotate(65deg) scale(0.75); opacity: 0; }
         }
 
-        /* Orange player holds paddle on their left (inner arena side) */
+        /* Orange player holds paddle anchored to their left shoulder (inner arena side) */
         .p-orange .paddle-rig {
-            left: -14px;
-            transform: translateY(35px) rotate(-45deg) scale(0.75);
+            left: -6px;
+            transform: translateY(18px) rotate(-48deg) scale(0.75);
         }
         .p-orange .paddle-rig.raised {
             opacity: 1;
@@ -802,17 +961,17 @@
         }
 
         @keyframes orangePaddleSpring {
-            0% { transform: translateY(35px) rotate(-45deg) scale(0.75); }
-            60% { transform: translateY(-28px) rotate(18deg) scale(1.1); }
-            82% { transform: translateY(-19px) rotate(4deg) scale(1.02); }
-            100% { transform: translateY(-22px) rotate(8deg) scale(1.05); }
+            0% { transform: translateY(18px) rotate(-48deg) scale(0.75); }
+            60% { transform: translateY(-10px) rotate(14deg) scale(1.05); }
+            82% { transform: translateY(-5px) rotate(2deg) scale(0.98); }
+            100% { transform: translateY(-7px) rotate(6deg) scale(1.0); }
         }
 
         @keyframes orangePendulumDrop {
-            0% { transform: translateY(-22px) rotate(8deg) scale(1.05); opacity: 1; }
-            45% { transform: translateY(25px) rotate(-78deg) scale(0.9); opacity: 0.9; }
-            70% { transform: translateY(20px) rotate(-55deg) scale(0.85); opacity: 0.6; }
-            100% { transform: translateY(38px) rotate(-68deg) scale(0.75); opacity: 0; }
+            0% { transform: translateY(-7px) rotate(6deg) scale(1.0); opacity: 1; }
+            45% { transform: translateY(16px) rotate(-72deg) scale(0.88); opacity: 0.9; }
+            70% { transform: translateY(12px) rotate(-52deg) scale(0.84); opacity: 0.6; }
+            100% { transform: translateY(24px) rotate(-65deg) scale(0.75); opacity: 0; }
         }
 
         .paddle-svg {
@@ -830,7 +989,7 @@
             background: linear-gradient(180deg, #263554 0%, #131b2e 100%);
             border-top: 3px solid #475569;
             border-radius: 8px 8px 4px 4px;
-            z-index: 4;
+            z-index: 6;
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.7);
             display: flex;
             align-items: center;
@@ -1294,17 +1453,24 @@
     </div>
 </div>
 
-<!-- 1. Setup Screen (No Prefilled Name) -->
+<!-- 1. Setup Screen (With 16 Male & 16 Female Character Gallery) -->
 <div id="setup-screen" class="overlay">
     <div class="card">
-        <div style="font-size:38px; margin-bottom:6px;">🔨</div>
+        <div style="font-size:32px; margin-bottom:2px;">🔨</div>
         <h2>Enter Auction Clash</h2>
-        <p style="font-size:12px; color:var(--muted); margin-bottom:18px;">Set your profile to enter the bidding arena</p>
+        <p style="font-size:12px; color:var(--muted); margin-bottom:12px;">Set your profile & choose your character</p>
         <input type="text" id="player-name" placeholder="Enter Your Name" value="" maxlength="18" autocomplete="off">
-        <select id="player-gender">
-            <option value="M">Male Avatar</option>
-            <option value="F">Female Avatar</option>
+        <select id="player-gender" onchange="onGenderChange()">
+            <option value="M">Male Avatars (16 Styles)</option>
+            <option value="F">Female Avatars (16 Styles)</option>
         </select>
+
+        <div class="avatar-picker-header">
+            <span>Select Character (16)</span>
+            <span class="selected-style-pill" id="selected-avatar-label">1. Specs & Classic</span>
+        </div>
+        <div class="avatar-picker-grid" id="avatar-picker-grid"></div>
+
         <button class="btn" onclick="initPlayer()">Start / Join Room</button>
     </div>
 </div>
@@ -1417,24 +1583,26 @@
                 <div class="emotion-banner" id="banner-me">🏆 WON BID!</div>
                 <div class="avatar-figure idle-physics" id="fig-me">
                     <div class="anger-steam">💢</div>
-                    <!-- Articulated Physics Hands for Celebrating -->
+                    <!-- Articulated Shoulder-Locked Arms & Hands -->
                     <svg class="chem-hand hand-left" viewBox="0 0 40 80">
-                        <rect x="14" y="24" width="12" height="48" rx="6" fill="#2563eb" stroke="#1d4ed8" stroke-width="2"/>
-                        <circle cx="20" cy="18" r="11" fill="#fde68a" stroke="#d97706" stroke-width="2"/>
+                        <rect class="arm-sleeve-me" x="14" y="22" width="12" height="44" rx="6" fill="#2563eb" stroke="#1d4ed8" stroke-width="2"/>
+                        <circle class="hand-skin-me" cx="20" cy="18" r="10" fill="#ffdbb4" stroke="#d97706" stroke-width="2"/>
                     </svg>
                     <svg class="chem-hand hand-right" viewBox="0 0 40 80">
-                        <rect x="14" y="24" width="12" height="48" rx="6" fill="#2563eb" stroke="#1d4ed8" stroke-width="2"/>
-                        <circle cx="20" cy="18" r="11" fill="#fde68a" stroke="#d97706" stroke-width="2"/>
+                        <rect class="arm-sleeve-me" x="14" y="22" width="12" height="44" rx="6" fill="#2563eb" stroke="#1d4ed8" stroke-width="2"/>
+                        <circle class="hand-skin-me" cx="20" cy="18" r="10" fill="#ffdbb4" stroke="#d97706" stroke-width="2"/>
                     </svg>
 
                     <img id="img-me" class="dicebear-img" src="" alt="My Avatar" onerror="handleAvatarError(this, 'me')">
-                    <!-- Custom Animated SVG Bidding Paddle -->
+                    <!-- Shoulder-Connected Animated SVG Bidding Paddle -->
                     <div class="paddle-rig" id="pad-me">
                         <svg class="paddle-svg" viewBox="0 0 80 140">
+                            <!-- Connected Arm Sleeve from Shoulder to Hand -->
+                            <path class="arm-sleeve-me" d="M 26 130 L 38 106 L 46 112 L 34 134 Z" fill="#2563eb" stroke="#1d4ed8" stroke-width="2" stroke-linejoin="round"/>
                             <!-- Stick -->
-                            <rect x="36" y="70" width="8" height="65" rx="4" fill="#b45309" stroke="#78350f" stroke-width="2"/>
+                            <rect x="36" y="70" width="8" height="58" rx="4" fill="#b45309" stroke="#78350f" stroke-width="2"/>
                             <!-- Hand holding stick -->
-                            <circle cx="40" cy="108" r="10" fill="#fde68a" stroke="#d97706" stroke-width="2"/>
+                            <circle class="hand-skin-me" cx="40" cy="108" r="10" fill="#ffdbb4" stroke="#d97706" stroke-width="2"/>
                             <!-- Paddle Board -->
                             <rect x="6" y="8" width="68" height="68" rx="14" fill="#ffffff" stroke="#3b82f6" stroke-width="5"/>
                             <text x="40" y="32" text-anchor="middle" fill="#64748b" font-size="10" font-weight="800">BID</text>
@@ -1472,24 +1640,26 @@
                 <div class="emotion-banner" id="banner-opp">🏆 WON BID!</div>
                 <div class="avatar-figure idle-physics" id="fig-opp">
                     <div class="anger-steam">💢</div>
-                    <!-- Articulated Physics Hands for Celebrating -->
+                    <!-- Articulated Shoulder-Locked Arms & Hands -->
                     <svg class="chem-hand hand-left" viewBox="0 0 40 80">
-                        <rect x="14" y="24" width="12" height="48" rx="6" fill="#ea580c" stroke="#c2410c" stroke-width="2"/>
-                        <circle cx="20" cy="18" r="11" fill="#fde68a" stroke="#d97706" stroke-width="2"/>
+                        <rect class="arm-sleeve-opp" x="14" y="22" width="12" height="44" rx="6" fill="#ea580c" stroke="#c2410c" stroke-width="2"/>
+                        <circle class="hand-skin-opp" cx="20" cy="18" r="10" fill="#ffdbb4" stroke="#d97706" stroke-width="2"/>
                     </svg>
                     <svg class="chem-hand hand-right" viewBox="0 0 40 80">
-                        <rect x="14" y="24" width="12" height="48" rx="6" fill="#ea580c" stroke="#c2410c" stroke-width="2"/>
-                        <circle cx="20" cy="18" r="11" fill="#fde68a" stroke="#d97706" stroke-width="2"/>
+                        <rect class="arm-sleeve-opp" x="14" y="22" width="12" height="44" rx="6" fill="#ea580c" stroke="#c2410c" stroke-width="2"/>
+                        <circle class="hand-skin-opp" cx="20" cy="18" r="10" fill="#ffdbb4" stroke="#d97706" stroke-width="2"/>
                     </svg>
 
                     <img id="img-opp" class="dicebear-img" src="" alt="Opponent Avatar" onerror="handleAvatarError(this, 'opp')">
-                    <!-- Custom Animated SVG Bidding Paddle -->
+                    <!-- Shoulder-Connected Animated SVG Bidding Paddle -->
                     <div class="paddle-rig" id="pad-opp">
                         <svg class="paddle-svg" viewBox="0 0 80 140">
+                            <!-- Connected Arm Sleeve from Shoulder to Hand -->
+                            <path class="arm-sleeve-opp" d="M 54 130 L 42 106 L 34 112 L 46 134 Z" fill="#ea580c" stroke="#c2410c" stroke-width="2" stroke-linejoin="round"/>
                             <!-- Stick -->
-                            <rect x="36" y="70" width="8" height="65" rx="4" fill="#b45309" stroke="#78350f" stroke-width="2"/>
+                            <rect x="36" y="70" width="8" height="58" rx="4" fill="#b45309" stroke="#78350f" stroke-width="2"/>
                             <!-- Hand holding stick -->
-                            <circle cx="40" cy="108" r="10" fill="#fde68a" stroke="#d97706" stroke-width="2"/>
+                            <circle class="hand-skin-opp" cx="40" cy="108" r="10" fill="#ffdbb4" stroke="#d97706" stroke-width="2"/>
                             <!-- Paddle Board -->
                             <rect x="6" y="8" width="68" height="68" rx="14" fill="#ffffff" stroke="#f97316" stroke-width="5"/>
                             <text x="40" y="32" text-anchor="middle" fill="#64748b" font-size="10" font-weight="800">BID</text>
@@ -1955,48 +2125,155 @@ window.addEventListener('popstate', () => {
     }
 });
 
+/* --- 32 CUSTOM AVATAR BLUEPRINTS (16 MALE & 16 FEMALE PRESETS) --- */
+const AVATAR_PRESETS = {
+    M: [
+        { id: 'M0', label: '1. Specs & Classic', seed: 'AlexM0', skin: 'ffdbb4', top: 'shortFlat', hair: '2c1b18', acc: 'prescription01', beard: '', cloth: 'blazerAndShirt' },
+        { id: 'M1', label: '2. Specs & Beard', seed: 'KingM1', skin: 'ffdbb4', top: 'shortWaved', hair: '4a312c', acc: 'prescription02', beard: 'beardLight', cloth: 'blazerAndSweater' },
+        { id: 'M2', label: '3. Round Specs', seed: 'LiamM2', skin: 'edb98a', top: 'theCaesarAndSidePart', hair: '2c1b18', acc: 'round', beard: '', cloth: 'collarAndSweater' },
+        { id: 'M3', label: '4. Smart Tee Specs', seed: 'NoahM3', skin: 'ffdbb4', top: 'shortRound', hair: '724133', acc: 'prescription01', beard: 'moustacheFancy', cloth: 'shirtCrewNeck' },
+        { id: 'M4', label: '5. Clean Suit', seed: 'EthanM4', skin: 'ffdbb4', top: 'shortFlat', hair: '4a312c', acc: '', beard: '', cloth: 'blazerAndShirt' },
+        { id: 'M5', label: '6. Hoodie & Beard', seed: 'LucasM5', skin: 'edb98a', top: 'shortWaved', hair: '2c1b18', acc: '', beard: 'beardMedium', cloth: 'hoodie' },
+        { id: 'M6', label: '7. Cool Shades', seed: 'MasonM6', skin: 'ffdbb4', top: 'shortCurly', hair: '2c1b18', acc: 'sunglasses', beard: 'beardLight', cloth: 'graphicShirt' },
+        { id: 'M7', label: '8. Wayfarer Boss', seed: 'LoganM7', skin: 'edb98a', top: 'theCaesar', hair: '4a312c', acc: 'wayfarers', beard: '', cloth: 'blazerAndSweater' },
+        { id: 'M8', label: '9. Royal Turban', seed: 'KabirM8', skin: 'ffdbb4', top: 'turban', hair: '2c1b18', hatColor: '25557c', acc: 'prescription01', beard: 'beardMajestic', cloth: 'blazerAndShirt' },
+        { id: 'M9', label: '10. Tech Founder', seed: 'RyanM9', skin: 'ffdbb4', top: 'shaggy', hair: 'a55728', acc: 'round', beard: 'beardLight', cloth: 'hoodie' },
+        { id: 'M10', label: '11. Mustache Gent', seed: 'LeoM10', skin: 'edb98a', top: 'shortFlat', hair: '2c1b18', acc: 'prescription02', beard: 'moustacheMagnum', cloth: 'collarAndSweater' },
+        { id: 'M11', label: '12. V-Neck Specs', seed: 'JackM11', skin: 'ffdbb4', top: 'shortCurly', hair: '724133', acc: 'prescription01', beard: '', cloth: 'shirtVNeck' },
+        { id: 'M12', label: '13. Dreads & Specs', seed: 'ZaynM12', skin: 'd08b5b', top: 'dreads01', hair: '2c1b18', acc: 'prescription02', beard: 'beardLight', cloth: 'shirtScoopNeck' },
+        { id: 'M13', label: '14. Professor', seed: 'ArthurM13', skin: 'ffdbb4', top: 'sides', hair: '4a312c', acc: 'round', beard: 'beardMedium', cloth: 'blazerAndSweater' },
+        { id: 'M14', label: '15. Casual Tee', seed: 'OwenM14', skin: 'ffdbb4', top: 'theCaesarAndSidePart', hair: 'b58143', acc: '', beard: '', cloth: 'shirtCrewNeck' },
+        { id: 'M15', label: '16. Legend Beard', seed: 'VikramM15', skin: 'edb98a', top: 'shortWaved', hair: '2c1b18', acc: 'wayfarers', beard: 'beardMajestic', cloth: 'blazerAndShirt' }
+    ],
+    F: [
+        { id: 'F0', label: '1. Royal Hijab', seed: 'AminaF0', skin: 'ffdbb4', top: 'hijab', hair: '2c1b18', hatColor: '3c4f5c', acc: '', beard: '', cloth: 'collarAndSweater' },
+        { id: 'F1', label: '2. Hijab & Specs', seed: 'ZoyaF1', skin: 'ffdbb4', top: 'hijab', hair: '2c1b18', hatColor: 'ff488e', acc: 'prescription02', beard: '', cloth: 'blazerAndSweater' },
+        { id: 'F2', label: '3. Pastel Hijab', seed: 'SaraF2', skin: 'edb98a', top: 'hijab', hair: '2c1b18', hatColor: '65c9ff', acc: 'round', beard: '', cloth: 'shirtScoopNeck' },
+        { id: 'F3', label: '4. Chudidar Grace', seed: 'MeeraF3', skin: 'ffdbb4', top: 'straight01', hair: '2c1b18', acc: '', beard: '', cloth: 'collarAndSweater' },
+        { id: 'F4', label: '5. Chudidar Specs', seed: 'DivyaF4', skin: 'edb98a', top: 'longButNotTooLong', hair: '4a312c', acc: 'prescription01', beard: '', cloth: 'collarAndSweater' },
+        { id: 'F5', label: '6. Ethnic Bun', seed: 'KavyaF5', skin: 'ffdbb4', top: 'bun', hair: '2c1b18', acc: '', beard: '', cloth: 'shirtVNeck' },
+        { id: 'F6', label: '7. Casual T-Shirt', seed: 'RiyaF6', skin: 'ffdbb4', top: 'curvy', hair: '4a312c', acc: '', beard: '', cloth: 'shirtCrewNeck' },
+        { id: 'F7', label: '8. Graphic Tee', seed: 'NishaF7', skin: 'ffdbb4', top: 'straight02', hair: '724133', acc: 'prescription02', beard: '', cloth: 'graphicShirt' },
+        { id: 'F8', label: '9. Scoop Tee Specs', seed: 'TaraF8', skin: 'edb98a', top: 'miaWallace', hair: '2c1b18', acc: 'round', beard: '', cloth: 'shirtScoopNeck' },
+        { id: 'F9', label: '10. CEO Blazer', seed: 'ElenaF9', skin: 'ffdbb4', top: 'straightAndStrand', hair: '2c1b18', acc: '', beard: '', cloth: 'blazerAndShirt' },
+        { id: 'F10', label: '11. Boss Bob Specs', seed: 'mayaF10', skin: 'ffdbb4', top: 'bob', hair: '4a312c', acc: 'prescription01', beard: '', cloth: 'blazerAndSweater' },
+        { id: 'F11', label: '12. Cozy Hoodie', seed: 'ChloeF11', skin: 'edb98a', top: 'curly', hair: 'a55728', acc: '', beard: '', cloth: 'hoodie' },
+        { id: 'F12', label: '13. Glam Shades', seed: 'SanaF12', skin: 'ffdbb4', top: 'bigHair', hair: '2c1b18', acc: 'sunglasses', beard: '', cloth: 'blazerAndSweater' },
+        { id: 'F13', label: '14. Floral Crown', seed: 'FridaF13', skin: 'ffdbb4', top: 'frida', hair: '2c1b18', acc: '', beard: '', cloth: 'collarAndSweater' },
+        { id: 'F14', label: '15. Chic Overalls', seed: 'LilyF14', skin: 'edb98a', top: 'bun', hair: '724133', acc: 'round', beard: '', cloth: 'overall' },
+        { id: 'F15', label: '16. Star Wayfarers', seed: 'AriaF15', skin: 'ffdbb4', top: 'curvy', hair: 'b58143', acc: 'wayfarers', beard: '', cloth: 'shirtVNeck' }
+    ]
+};
+
+let selectedAvatarId = 'M0';
+
+function getPresetById(gender, role, avatarId) {
+    const g = gender === 'F' ? 'F' : 'M';
+    const list = AVATAR_PRESETS[g];
+    if (avatarId) {
+        const found = list.find(item => item.id === avatarId);
+        if (found) return found;
+    }
+    // Distinct defaults for Player 1 vs Player 2 if no preset ID was specified
+    if (g === 'M') {
+        return role === 'p1' ? list[0] : list[1];
+    } else {
+        return role === 'p1' ? list[0] : list[3];
+    }
+}
+
 /* --- DICEBEAR PROFESSIONAL AVATAR GENERATOR WITH 100% VALID SCHEMA + FALLBACK --- */
-function getAvatarUrl(gender, role, mood = 'neutral') {
-    const seed = gender === 'F'
-        ? (role === 'p1' ? 'Sophia' : 'Valentina')
-        : (role === 'p1' ? 'Alexander' : 'Kingston');
-
-    const topStyles = gender === 'F'
-        ? 'longButNotTooLong,straight01,curvy'
-        : 'shortFlat,shortWaved,theCaesar';
-
-    const clothes = gender === 'F'
-        ? 'blazerAndSweater,collarAndSweater'
-        : 'blazerAndShirt,blazerAndSweater';
-
+function getAvatarUrl(gender, role, mood = 'neutral', avatarId = null) {
+    const preset = getPresetById(gender, role, avatarId);
     const clothColor = role === 'p1' ? '2563eb' : 'ea580c';
-    const facialHair = gender === 'F' ? '' : '&facialHairProbability=20';
+    const hatColor = preset.hatColor || (role === 'p1' ? '25557c' : 'ff488e');
+    const accProb = preset.acc ? 100 : 0;
+    const accVal = preset.acc || 'prescription01';
+    const beardProb = preset.beard ? 100 : 0;
+    const beardVal = preset.beard || 'beardLight';
 
-    let mouth = 'smile,default';
-    let eyes = 'default,happy';
+    let mouth = 'smile';
+    let eyes = 'default';
     let eyebrows = 'defaultNatural';
 
     if (mood === 'win') {
-        mouth = 'smile,twinkle';
-        eyes = 'happy,hearts';
-        eyebrows = 'raisedExcitedNatural,raisedExcited';
+        mouth = 'twinkle';
+        eyes = 'happy';
+        eyebrows = 'raisedExcitedNatural';
     } else if (mood === 'lose') {
         // Strictly valid DiceBear 7.x avataaars schema values
-        mouth = 'sad,grimace,serious';
-        eyes = 'cry,squint,xDizzy';
-        eyebrows = 'angryNatural,angry,sadConcerned';
+        mouth = 'sad';
+        eyes = 'cry';
+        eyebrows = 'angryNatural';
     } else if (mood === 'bid') {
-        mouth = 'smile,twinkle';
-        eyes = 'wink,happy';
+        mouth = 'smile';
+        eyes = 'wink';
         eyebrows = 'raisedExcitedNatural';
     }
 
-    return `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(seed)}&top=${topStyles}&clothing=${clothes}&clothingColor=${clothColor}&mouth=${mouth}&eyes=${eyes}&eyebrows=${eyebrows}${facialHair}`;
+    return `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(preset.seed)}&skinColor=${preset.skin}&top=${preset.top}&hairColor=${preset.hair}&hatColor=${hatColor}&accessoriesProbability=${accProb}&accessories=${accVal}&accessoriesColor=262e33&facialHairProbability=${beardProb}&facialHair=${beardVal}&facialHairColor=${preset.hair}&clothing=${preset.cloth}&clothingColor=${clothColor}&mouth=${mouth}&eyes=${eyes}&eyebrows=${eyebrows}`;
+}
+
+/* Sync SVG hand skin tone & sleeve color with chosen avatar preset */
+function syncCharacterLimbColors(side, player, role) {
+    const preset = getPresetById(player.gender, role, player.avatarId);
+    const skinHex = '#' + (preset.skin || 'ffdbb4');
+    const skinCircles = document.querySelectorAll(`.hand-skin-${side}`);
+    skinCircles.forEach(c => {
+        c.setAttribute('fill', skinHex);
+    });
+}
+
+/* Render the 16-Avatar Picker Grid on the Setup Screen */
+function renderAvatarPicker() {
+    const gender = document.getElementById('player-gender').value;
+    const grid = document.getElementById('avatar-picker-grid');
+    const labelEl = document.getElementById('selected-avatar-label');
+    if (!grid) return;
+
+    const list = AVATAR_PRESETS[gender === 'F' ? 'F' : 'M'];
+    if (!list.some(item => item.id === selectedAvatarId)) {
+        selectedAvatarId = list[0].id;
+    }
+
+    const activePreset = list.find(item => item.id === selectedAvatarId) || list[0];
+    if (labelEl) labelEl.innerText = activePreset.label;
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const previewRole = urlParams.get('m') ? 'p2' : 'p1';
+
+    grid.innerHTML = '';
+    list.forEach(preset => {
+        const card = document.createElement('div');
+        card.className = 'avatar-option-card' + (preset.id === selectedAvatarId ? ' selected' : '');
+        const imgUrl = getAvatarUrl(gender, previewRole, 'neutral', preset.id);
+        card.innerHTML = `
+            <img src="${imgUrl}" alt="${preset.label}" loading="lazy">
+            <span class="avatar-option-label">${preset.label}</span>
+        `;
+        card.onclick = () => {
+            selectedAvatarId = preset.id;
+            vibrateDevice(20);
+            if (labelEl) labelEl.innerText = preset.label;
+            grid.querySelectorAll('.avatar-option-card').forEach(el => el.classList.remove('selected'));
+            card.classList.add('selected');
+        };
+        grid.appendChild(card);
+    });
+}
+
+function onGenderChange() {
+    const gender = document.getElementById('player-gender').value;
+    const urlParams = new URLSearchParams(window.location.search);
+    const isP2 = Boolean(urlParams.get('m'));
+    selectedAvatarId = gender === 'F' ? (isP2 ? 'F3' : 'F0') : (isP2 ? 'M1' : 'M0');
+    vibrateDevice(25);
+    renderAvatarPicker();
 }
 
 function getInlineFallbackAvatar(side) {
     const suit = side === 'me' ? '#2563eb' : '#ea580c';
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><circle cx="60" cy="40" r="24" fill="#fde68a" stroke="#d97706" stroke-width="3"/><circle cx="51" cy="36" r="3.5" fill="#0f172a"/><circle cx="69" cy="36" r="3.5" fill="#0f172a"/><path d="M50 47 Q60 54 70 47" stroke="#0f172a" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M22 112 C22 76 98 76 98 112 Z" fill="${suit}" stroke="#ffffff" stroke-width="3"/></svg>`;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><circle cx="60" cy="40" r="24" fill="#ffdbb4" stroke="#d97706" stroke-width="3"/><circle cx="51" cy="36" r="3.5" fill="#0f172a"/><circle cx="69" cy="36" r="3.5" fill="#0f172a"/><path d="M50 47 Q60 54 70 47" stroke="#0f172a" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M22 112 C22 76 98 76 98 112 Z" fill="${suit}" stroke="#ffffff" stroke-width="3"/></svg>`;
     return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
 }
 
@@ -2004,7 +2281,7 @@ function handleAvatarError(imgEl, side) {
     if (!imgEl) return;
     const player = localState && localState.players && localState.players[side === 'me' ? myRole : oppRole];
     const role = side === 'me' ? myRole : oppRole;
-    const neutralUrl = player ? getAvatarUrl(player.gender, role, 'neutral') : '';
+    const neutralUrl = player ? getAvatarUrl(player.gender, role, 'neutral', player.avatarId) : '';
     if (neutralUrl && imgEl.src !== neutralUrl && !imgEl.dataset.retriedNeutral) {
         imgEl.dataset.retriedNeutral = '1';
         imgEl.src = neutralUrl;
@@ -2014,15 +2291,24 @@ function handleAvatarError(imgEl, side) {
     }
 }
 
-function preloadPlayerAvatars(meGender, oppGender) {
+function preloadPlayerAvatars(mePlayer, oppPlayer) {
     const moods = ['neutral', 'win', 'lose', 'bid'];
     moods.forEach(m => {
         const img1 = new Image();
-        img1.src = getAvatarUrl(meGender, myRole, m);
+        img1.src = getAvatarUrl(mePlayer.gender, myRole, m, mePlayer.avatarId);
         const img2 = new Image();
-        img2.src = getAvatarUrl(oppGender, oppRole, m);
+        img2.src = getAvatarUrl(oppPlayer.gender, oppRole, m, oppPlayer.avatarId);
     });
 }
+
+/* Initialize the 16-Character Picker as soon as DOM loads */
+window.addEventListener('DOMContentLoaded', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('m')) {
+        selectedAvatarId = 'M1';
+    }
+    renderAvatarPicker();
+});
 
 /* --- LOCALIZED AVATAR BOX CONFETTI ENGINE (SHOWS IN WINNER'S BOX ON BOTH SCREENS) --- */
 function fireAvatarBoxConfetti(canvasId) {
@@ -2101,6 +2387,7 @@ let leastBidAutoFilledKey = null;
 let lastProcessedEventId = 0;
 let endScreenHandled = false;
 let avatarsLoaded = false;
+let loadedAvatarKey = '';
 let paddleTimeoutMe = null;
 let paddleTimeoutOpp = null;
 let reactionTimeout = null;
@@ -2127,6 +2414,7 @@ function initPlayer() {
     }
 
     const gender = qs('#player-gender').value;
+    const avatarId = selectedAvatarId || (gender === 'F' ? 'F0' : 'M0');
     qs('#setup-screen').classList.add('hidden');
     vibrateDevice(35);
 
@@ -2146,7 +2434,7 @@ function initPlayer() {
                 });
                 return;
             }
-            roomRef.child('players/p2').set({ name: nameInput, gender, funds: 50, score: 0, spent: 0 });
+            roomRef.child('players/p2').set({ name: nameInput, gender, avatarId, funds: 50, score: 0, spent: 0 });
             qs('#draft-screen').classList.remove('hidden');
         });
     } else {
@@ -2157,7 +2445,7 @@ function initPlayer() {
 
         roomRef.set({
             phase: 'waiting',
-            players: { p1: { name: nameInput, gender, funds: 50, score: 0, spent: 0 } },
+            players: { p1: { name: nameInput, gender, avatarId, funds: 50, score: 0, spent: 0 } },
             auction: { index: 0, currentBid: 0, highestBidder: null, turn: 'p1', bidCount: 0, passCount: 0 }
         });
 
@@ -2326,9 +2614,11 @@ function handleBroadcastEvent(state) {
         // Pendulum drop animation on the player who left
         const passerSide = ev.passer === myRole ? 'me' : 'opp';
         const padEl = qs(`#pad-${passerSide}`);
+        const figEl = qs(`#fig-${passerSide}`);
         if (padEl) {
             padEl.classList.remove('raised');
             padEl.classList.add('pendulum-drop');
+            if (figEl) figEl.classList.remove('paddle-active');
             setTimeout(() => padEl.classList.remove('pendulum-drop'), 950);
         }
 
@@ -2373,16 +2663,16 @@ function handleBroadcastEvent(state) {
             padLoser.classList.add('pendulum-drop');
         }
 
-        figMe.classList.remove('winner-celebrate', 'loser-tantrum');
-        figOpp.classList.remove('winner-celebrate', 'loser-tantrum');
+        figMe.classList.remove('winner-celebrate', 'loser-tantrum', 'paddle-active');
+        figOpp.classList.remove('winner-celebrate', 'loser-tantrum', 'paddle-active');
         zoneMe.classList.remove('zone-win-glow', 'zone-lose-dim');
         zoneOpp.classList.remove('zone-win-glow', 'zone-lose-dim');
         bannerMe.className = 'emotion-banner';
         bannerOpp.className = 'emotion-banner';
 
         if (isMeWinner) {
-            qs('#img-me').src = getAvatarUrl(me.gender, myRole, 'win');
-            qs('#img-opp').src = getAvatarUrl(opp.gender, oppRole, 'lose');
+            qs('#img-me').src = getAvatarUrl(me.gender, myRole, 'win', me.avatarId);
+            qs('#img-opp').src = getAvatarUrl(opp.gender, oppRole, 'lose', opp.avatarId);
             figMe.classList.add('winner-celebrate');
             figOpp.classList.add('loser-tantrum');
             zoneMe.classList.add('zone-win-glow');
@@ -2392,8 +2682,8 @@ function handleBroadcastEvent(state) {
             bannerOpp.innerText = `😤 LOST BID`;
             bannerOpp.classList.add('show-lose');
         } else {
-            qs('#img-me').src = getAvatarUrl(me.gender, myRole, 'lose');
-            qs('#img-opp').src = getAvatarUrl(opp.gender, oppRole, 'win');
+            qs('#img-me').src = getAvatarUrl(me.gender, myRole, 'lose', me.avatarId);
+            qs('#img-opp').src = getAvatarUrl(opp.gender, oppRole, 'win', opp.avatarId);
             figMe.classList.add('loser-tantrum');
             figOpp.classList.add('winner-celebrate');
             zoneMe.classList.add('zone-lose-dim');
@@ -2413,8 +2703,8 @@ function handleBroadcastEvent(state) {
             bannerMe.className = 'emotion-banner';
             bannerOpp.className = 'emotion-banner';
             if (padLoser) padLoser.classList.remove('pendulum-drop');
-            qs('#img-me').src = getAvatarUrl(me.gender, myRole, 'neutral');
-            qs('#img-opp').src = getAvatarUrl(opp.gender, oppRole, 'neutral');
+            qs('#img-me').src = getAvatarUrl(me.gender, myRole, 'neutral', me.avatarId);
+            qs('#img-opp').src = getAvatarUrl(opp.gender, oppRole, 'neutral', opp.avatarId);
         }, 2600);
 
         showToast(`🔨 Sold ${ev.itemName} to ${winnerName} for ₹${ev.cost}!`, "success");
@@ -2519,12 +2809,16 @@ function renderGame(state) {
     qs('#ledger-spent-opp').innerText = `₹${oppSpent}`;
     qs('#ledger-score-opp').innerText = `${opp.score} pts`;
 
-    // 2. Load & Preload Imported DiceBear Avatars Once
-    if (!avatarsLoaded) {
-        preloadPlayerAvatars(me.gender, opp.gender);
-        qs('#img-me').src = getAvatarUrl(me.gender, myRole, 'neutral');
-        qs('#img-opp').src = getAvatarUrl(opp.gender, oppRole, 'neutral');
+    // 2. Load & Preload Imported DiceBear Avatars & Sync Hand Skin Tones
+    const currentAvatarKey = `${me.gender}_${me.avatarId || ''}_${opp.gender}_${opp.avatarId || ''}`;
+    if (!avatarsLoaded || loadedAvatarKey !== currentAvatarKey) {
+        preloadPlayerAvatars(me, opp);
+        syncCharacterLimbColors('me', me, myRole);
+        syncCharacterLimbColors('opp', opp, oppRole);
+        qs('#img-me').src = getAvatarUrl(me.gender, myRole, 'neutral', me.avatarId);
+        qs('#img-opp').src = getAvatarUrl(opp.gender, oppRole, 'neutral', opp.avatarId);
         avatarsLoaded = true;
+        loadedAvatarKey = currentAvatarKey;
     }
 
     // 3. Populate Detailed Scrollable Ledger Lists (Name, Points, Paid Price)
@@ -2637,6 +2931,8 @@ function renderGame(state) {
 
         qs('#pad-me').classList.remove('raised', 'pendulum-drop');
         qs('#pad-opp').classList.remove('raised', 'pendulum-drop');
+        qs('#fig-me').classList.remove('paddle-active');
+        qs('#fig-opp').classList.remove('paddle-active');
 
         cardEl.classList.remove('shift-in', 'shimmer-active');
         void cardEl.offsetWidth; // Reflow
@@ -2759,7 +3055,7 @@ function renderGame(state) {
         input.placeholder = "Opponent's Turn";
     }
 
-    // 7. Trigger Animated SVG Bidding Paddle with Spring Recoil on New Bid
+    // 7. Trigger Animated SVG Bidding Paddle with Unified Torso Spring Recoil on New Bid
     if (state.auction.bidCount > previousBidCount && state.auction.highestBidder) {
         playSound('bid');
         vibrateDevice(40);
@@ -2772,20 +3068,24 @@ function renderGame(state) {
         const otherPaddleRig = qs(`#pad-${otherRoleId}`);
         const paddleText = qs(`#padval-${targetRoleId}`);
         const avatarFig = qs(`#fig-${targetRoleId}`);
+        const otherAvatarFig = qs(`#fig-${otherRoleId}`);
         const avatarImg = qs(`#img-${targetRoleId}`);
 
         if (paddleText && paddleRig) {
             paddleText.textContent = `₹${state.auction.currentBid}`;
             otherPaddleRig.classList.remove('raised');
+            if (otherAvatarFig) otherAvatarFig.classList.remove('paddle-active');
+
             paddleRig.classList.remove('pendulum-drop');
             paddleRig.classList.remove('raised');
             void paddleRig.offsetWidth;
             paddleRig.classList.add('raised');
+            avatarFig.classList.add('paddle-active');
 
-            // Temporary excited bidding expression
+            // Temporary excited bidding expression preserving chosen character
             const bidderPlayer = isMeBidder ? me : opp;
             const bidderRole = isMeBidder ? myRole : oppRole;
-            if (avatarImg) avatarImg.src = getAvatarUrl(bidderPlayer.gender, bidderRole, 'bid');
+            if (avatarImg) avatarImg.src = getAvatarUrl(bidderPlayer.gender, bidderRole, 'bid', bidderPlayer.avatarId);
 
             avatarFig.classList.remove('bidding-bounce');
             void avatarFig.offsetWidth;
@@ -2795,13 +3095,15 @@ function renderGame(state) {
                 if (paddleTimeoutMe) clearTimeout(paddleTimeoutMe);
                 paddleTimeoutMe = setTimeout(() => {
                     paddleRig.classList.remove('raised');
-                    if (avatarImg) avatarImg.src = getAvatarUrl(me.gender, myRole, 'neutral');
+                    avatarFig.classList.remove('paddle-active', 'bidding-bounce');
+                    if (avatarImg) avatarImg.src = getAvatarUrl(me.gender, myRole, 'neutral', me.avatarId);
                 }, 2200);
             } else {
                 if (paddleTimeoutOpp) clearTimeout(paddleTimeoutOpp);
                 paddleTimeoutOpp = setTimeout(() => {
                     paddleRig.classList.remove('raised');
-                    if (avatarImg) avatarImg.src = getAvatarUrl(opp.gender, oppRole, 'neutral');
+                    avatarFig.classList.remove('paddle-active', 'bidding-bounce');
+                    if (avatarImg) avatarImg.src = getAvatarUrl(opp.gender, oppRole, 'neutral', opp.avatarId);
                 }, 2200);
             }
         }
