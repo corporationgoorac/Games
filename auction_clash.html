@@ -51,7 +51,7 @@
             top: 16px;
             left: 50%;
             transform: translateX(-50%);
-            z-index: 3000;
+            z-index: 3500;
             display: flex;
             flex-direction: column;
             gap: 8px;
@@ -78,6 +78,7 @@
         }
         .toast.error { border-left-color: var(--danger); }
         .toast.success { border-left-color: var(--green); }
+        .toast.gold { border-left-color: var(--gold); }
 
         @keyframes toastIn {
             from { opacity: 0; transform: translateY(-20px) scale(0.95); }
@@ -90,7 +91,7 @@
             inset: 0;
             background: rgba(0, 0, 0, 0.78);
             backdrop-filter: blur(6px);
-            z-index: 2500;
+            z-index: 3000;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -178,7 +179,7 @@
             font-weight: 800;
             font-size: 15px;
             cursor: pointer;
-            transition: transform 0.15s, opacity 0.2s, box-shadow 0.2s;
+            transition: transform 0.15s, opacity 0.2s, box-shadow 0.2s, background 0.2s;
             background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
             color: #fff;
             text-transform: uppercase;
@@ -260,6 +261,12 @@
         }
         .leader-pill.me { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid var(--blue); }
         .leader-pill.opp { background: rgba(249, 115, 22, 0.2); color: #fb923c; border: 1px solid var(--orange); }
+        .leader-pill.least { background: rgba(16, 185, 129, 0.22); color: #34d399; border: 1px solid var(--green); animation: pulseLeast 1s infinite alternate; }
+
+        @keyframes pulseLeast {
+            from { box-shadow: 0 0 4px rgba(16, 185, 129, 0.3); transform: scale(0.98); }
+            to { box-shadow: 0 0 14px rgba(16, 185, 129, 0.7); transform: scale(1.03); }
+        }
 
         /* Compact Horizontal Auction Card */
         .auction-card {
@@ -284,6 +291,10 @@
         .auction-card.lead-opp {
             border-color: var(--orange);
             box-shadow: 0 0 22px var(--orange-glow);
+        }
+        .auction-card.least-bid-glow {
+            border-color: var(--green);
+            box-shadow: 0 0 24px rgba(16, 185, 129, 0.45);
         }
 
         /* Shimmer & Shift Animations */
@@ -415,6 +426,20 @@
             overflow: hidden;
         }
 
+        /* Gavel Impact Screen Shake Physics */
+        .arena.arena-shake {
+            animation: gavelShake 0.38s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+        }
+
+        @keyframes gavelShake {
+            0%, 100% { transform: translate3d(0, 0, 0); }
+            15% { transform: translate3d(-5px, -4px, 0) rotate(-0.8deg); }
+            30% { transform: translate3d(5px, 3px, 0) rotate(0.8deg); }
+            45% { transform: translate3d(-4px, 2px, 0) rotate(-0.5deg); }
+            60% { transform: translate3d(4px, -2px, 0) rotate(0.5deg); }
+            75% { transform: translate3d(-2px, 1px, 0); }
+        }
+
         .player-zone {
             flex: 1;
             display: flex;
@@ -422,6 +447,7 @@
             justify-content: space-between;
             position: relative;
             overflow: hidden;
+            transition: background 0.35s ease;
         }
 
         .p-blue {
@@ -431,6 +457,24 @@
 
         .p-orange {
             background: radial-gradient(circle at 50% 80%, rgba(249, 115, 22, 0.14), transparent 70%);
+        }
+
+        .player-zone.zone-win-glow {
+            background: radial-gradient(circle at 50% 75%, rgba(16, 185, 129, 0.32), transparent 75%);
+        }
+
+        .player-zone.zone-lose-dim {
+            background: radial-gradient(circle at 50% 80%, rgba(239, 68, 68, 0.18), transparent 75%);
+        }
+
+        /* Localized Avatar Box Confetti Canvas */
+        .avatar-confetti-canvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 12;
         }
 
         /* Dedicated Top Stats Card inside each Player Zone (Never overlaps Avatar) */
@@ -526,7 +570,7 @@
         }
         @keyframes pulseText { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
 
-        /* --- AVATAR & ANIMATED PADDLE STAGE --- */
+        /* --- AVATAR & ANIMATED PADDLE STAGE + ADVANCED PHYSICS --- */
         .avatar-stage {
             position: relative;
             flex: 1;
@@ -538,35 +582,171 @@
             min-height: 150px;
         }
 
+        /* Floating Emotion / Outcome Banner above Avatar */
+        .emotion-banner {
+            position: absolute;
+            top: 8px;
+            left: 50%;
+            transform: translateX(-50%) translateY(10px) scale(0.8);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 900;
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
+            white-space: nowrap;
+            z-index: 15;
+            opacity: 0;
+            pointer-events: none;
+            transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.25s ease;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.55);
+        }
+        .emotion-banner.show-win {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0) scale(1);
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: #ffffff;
+            border: 1px solid #6ee7b7;
+        }
+        .emotion-banner.show-lose {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0) scale(1);
+            background: linear-gradient(135deg, #ef4444, #991b1b);
+            color: #ffffff;
+            border: 1px solid #fca5a5;
+        }
+
         .avatar-figure {
             position: relative;
-            width: 115px;
-            height: 125px;
+            width: 122px;
+            height: 132px;
             display: flex;
             justify-content: center;
             align-items: flex-end;
             z-index: 3;
+            transform-origin: bottom center;
+        }
+
+        /* Subtle Idle Physics Breathing */
+        .avatar-figure.idle-physics {
+            animation: avatarIdleBreathe 3.2s ease-in-out infinite;
+        }
+
+        @keyframes avatarIdleBreathe {
+            0%, 100% { transform: translateY(0) scaleY(1) scaleX(1); }
+            50% { transform: translateY(-3px) scaleY(1.02) scaleX(0.99); }
         }
 
         .dicebear-img {
-            width: 105px;
-            height: 105px;
+            width: 108px;
+            height: 108px;
             object-fit: contain;
             filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.6));
-            transition: transform 0.3s ease;
+            transition: transform 0.3s ease, filter 0.3s ease;
             z-index: 3;
+            transform-origin: bottom center;
         }
 
+        /* Physics 1: Aggressive Bid Bounce (Squash & Stretch) */
         .avatar-figure.bidding-bounce .dicebear-img {
-            animation: charBounce 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+            animation: charBidSpring 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
 
-        @keyframes charBounce {
-            0%, 100% { transform: translateY(0) scale(1); }
-            40% { transform: translateY(-8px) scale(1.05); }
+        @keyframes charBidSpring {
+            0% { transform: translateY(0) scaleX(1) scaleY(1); }
+            20% { transform: translateY(4px) scaleX(1.12) scaleY(0.88); }
+            55% { transform: translateY(-16px) scaleX(0.93) scaleY(1.1); }
+            80% { transform: translateY(2px) scaleX(1.04) scaleY(0.96); }
+            100% { transform: translateY(0) scaleX(1) scaleY(1); }
         }
 
-        /* Animated SVG Bidding Paddle */
+        /* Physics 2: Winner Multi-Jump Squash & Stretch Celebration */
+        .avatar-figure.winner-celebrate .dicebear-img {
+            animation: winnerJoyJump 0.85s cubic-bezier(0.28, 0.84, 0.42, 1) 3;
+            filter: drop-shadow(0 0 18px rgba(16, 185, 129, 0.85));
+        }
+
+        @keyframes winnerJoyJump {
+            0% { transform: translateY(0) scaleX(1) scaleY(1) rotate(0deg); }
+            15% { transform: translateY(6px) scaleX(1.16) scaleY(0.84) rotate(-3deg); }
+            45% { transform: translateY(-24px) scaleX(0.9) scaleY(1.14) rotate(5deg); }
+            70% { transform: translateY(-10px) scaleX(0.96) scaleY(1.05) rotate(-4deg); }
+            88% { transform: translateY(3px) scaleX(1.08) scaleY(0.92) rotate(1deg); }
+            100% { transform: translateY(0) scaleX(1) scaleY(1) rotate(0deg); }
+        }
+
+        /* Physics 3: Loser Dead-Weight Gravity Slouch & Frustration Shake */
+        .avatar-figure.loser-tantrum .dicebear-img {
+            animation: loserAngrySlouch 2.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards;
+            filter: drop-shadow(0 0 14px rgba(239, 68, 68, 0.65)) saturate(0.85);
+        }
+
+        @keyframes loserAngrySlouch {
+            0% { transform: translateY(0) scale(1) rotate(0deg); }
+            10% { transform: translateX(-6px) rotate(-6deg) scale(1.03); }
+            20% { transform: translateX(6px) rotate(6deg) scale(1.03); }
+            30% { transform: translateX(-5px) rotate(-5deg); }
+            40% { transform: translateX(5px) rotate(5deg); }
+            55% { transform: translateY(10px) scaleX(1.09) scaleY(0.86) rotate(-4deg); }
+            85% { transform: translateY(10px) scaleX(1.09) scaleY(0.86) rotate(-4deg); }
+            100% { transform: translateY(0) scaleX(1) scaleY(1) rotate(0deg); }
+        }
+
+        /* Physics-Driven Articulated Hands for Winner / Loser */
+        .chem-hand {
+            position: absolute;
+            width: 34px;
+            height: 70px;
+            bottom: 24px;
+            z-index: 7;
+            opacity: 0;
+            pointer-events: none;
+            transform-origin: bottom center;
+            transition: opacity 0.2s ease, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            filter: drop-shadow(0 5px 10px rgba(0,0,0,0.6));
+        }
+
+        .chem-hand.hand-left { left: -10px; transform: translateY(25px) rotate(-35deg) scale(0.7); }
+        .chem-hand.hand-right { right: -10px; transform: translateY(25px) rotate(35deg) scale(0.7); }
+
+        /* Winner raises both hands & waves */
+        .avatar-figure.winner-celebrate .chem-hand.hand-left {
+            opacity: 1;
+            animation: waveLeftHand 0.55s ease-in-out infinite alternate;
+        }
+        .avatar-figure.winner-celebrate .chem-hand.hand-right {
+            opacity: 1;
+            animation: waveRightHand 0.55s ease-in-out infinite alternate;
+        }
+
+        @keyframes waveLeftHand {
+            0% { transform: translateY(-30px) rotate(-18deg) scale(1); }
+            100% { transform: translateY(-38px) rotate(-42deg) scale(1.06); }
+        }
+        @keyframes waveRightHand {
+            0% { transform: translateY(-30px) rotate(18deg) scale(1); }
+            100% { transform: translateY(-38px) rotate(42deg) scale(1.06); }
+        }
+
+        /* Anger Steam Badge for Loser */
+        .anger-steam {
+            position: absolute;
+            top: 2px;
+            right: 4px;
+            font-size: 22px;
+            z-index: 9;
+            opacity: 0;
+            pointer-events: none;
+        }
+        .avatar-figure.loser-tantrum .anger-steam {
+            animation: steamPop 0.6s ease-in-out 3;
+        }
+        @keyframes steamPop {
+            0%, 100% { opacity: 0; transform: scale(0.6) rotate(-10deg); }
+            50% { opacity: 1; transform: scale(1.25) rotate(12deg); }
+        }
+
+        /* Animated SVG Bidding Paddle with Spring & Pendulum Physics */
         .paddle-rig {
             position: absolute;
             bottom: 18px;
@@ -575,28 +755,64 @@
             z-index: 6;
             pointer-events: none;
             transform-origin: bottom center;
-            transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.25s ease;
+            transition: transform 0.48s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.25s ease;
             opacity: 0;
         }
 
         /* Blue player holds paddle on their right (inner arena side) */
         .p-blue .paddle-rig {
-            right: -12px;
+            right: -14px;
             transform: translateY(35px) rotate(45deg) scale(0.75);
         }
         .p-blue .paddle-rig.raised {
             opacity: 1;
-            transform: translateY(-22px) rotate(-8deg) scale(1.05);
+            animation: bluePaddleSpring 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+        .p-blue .paddle-rig.pendulum-drop {
+            opacity: 1;
+            animation: bluePendulumDrop 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+
+        @keyframes bluePaddleSpring {
+            0% { transform: translateY(35px) rotate(45deg) scale(0.75); }
+            60% { transform: translateY(-28px) rotate(-18deg) scale(1.1); }
+            82% { transform: translateY(-19px) rotate(-4deg) scale(1.02); }
+            100% { transform: translateY(-22px) rotate(-8deg) scale(1.05); }
+        }
+
+        @keyframes bluePendulumDrop {
+            0% { transform: translateY(-22px) rotate(-8deg) scale(1.05); opacity: 1; }
+            45% { transform: translateY(25px) rotate(78deg) scale(0.9); opacity: 0.9; }
+            70% { transform: translateY(20px) rotate(55deg) scale(0.85); opacity: 0.6; }
+            100% { transform: translateY(38px) rotate(68deg) scale(0.75); opacity: 0; }
         }
 
         /* Orange player holds paddle on their left (inner arena side) */
         .p-orange .paddle-rig {
-            left: -12px;
+            left: -14px;
             transform: translateY(35px) rotate(-45deg) scale(0.75);
         }
         .p-orange .paddle-rig.raised {
             opacity: 1;
-            transform: translateY(-22px) rotate(8deg) scale(1.05);
+            animation: orangePaddleSpring 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+        .p-orange .paddle-rig.pendulum-drop {
+            opacity: 1;
+            animation: orangePendulumDrop 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+
+        @keyframes orangePaddleSpring {
+            0% { transform: translateY(35px) rotate(-45deg) scale(0.75); }
+            60% { transform: translateY(-28px) rotate(18deg) scale(1.1); }
+            82% { transform: translateY(-19px) rotate(4deg) scale(1.02); }
+            100% { transform: translateY(-22px) rotate(8deg) scale(1.05); }
+        }
+
+        @keyframes orangePendulumDrop {
+            0% { transform: translateY(-22px) rotate(8deg) scale(1.05); opacity: 1; }
+            45% { transform: translateY(25px) rotate(-78deg) scale(0.9); opacity: 0.9; }
+            70% { transform: translateY(20px) rotate(-55deg) scale(0.85); opacity: 0.6; }
+            100% { transform: translateY(38px) rotate(-68deg) scale(0.75); opacity: 0; }
         }
 
         .paddle-svg {
@@ -686,6 +902,11 @@
             font-size: 15px;
         }
 
+        .btn-bid.purchase-mode {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.45);
+        }
+
         .btn-leave {
             background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
             color: #fff;
@@ -696,11 +917,19 @@
             box-shadow: 0 6px 20px rgba(239, 68, 68, 0.3);
         }
 
+        /* Side-by-Side Bottom Action Buttons (Left: View Upcoming | Right: View Ledger) */
+        .bottom-drawer-row {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+        }
+
         .ledger-btn {
+            flex: 1;
             background: rgba(255, 255, 255, 0.04);
             border: 1px solid var(--border);
             color: #cbd5e1;
-            padding: 9px;
+            padding: 9px 10px;
             border-radius: 10px;
             font-size: 12px;
             font-weight: 700;
@@ -708,18 +937,19 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
-            transition: background 0.2s;
+            gap: 6px;
+            transition: background 0.2s, border-color 0.2s;
+            white-space: nowrap;
         }
         .ledger-btn:active { background: rgba(255, 255, 255, 0.1); }
 
-        /* --- VIEW LEDGER DRAWER (BACK-BUTTON SUPPORTED) --- */
+        /* --- SHARED DRAWER BACKDROP & BOTTOM SHEETS (ELEVATED ABOVE END SCREEN) --- */
         #ledger-backdrop {
             position: fixed;
             inset: 0;
-            background: rgba(0, 0, 0, 0.65);
-            backdrop-filter: blur(4px);
-            z-index: 90;
+            background: rgba(0, 0, 0, 0.72);
+            backdrop-filter: blur(5px);
+            z-index: 2100;
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.3s ease;
@@ -729,48 +959,85 @@
             pointer-events: auto;
         }
 
-        #inventory-panel {
+        #inventory-panel,
+        #upcoming-panel {
             position: fixed;
             bottom: 0;
             left: 0;
             right: 0;
             background: var(--surface);
-            height: 72vh;
+            height: 76vh;
+            max-height: 76dvh;
             transform: translateY(100%);
             transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
-            z-index: 100;
+            z-index: 2200;
             border-top-left-radius: 24px;
             border-top-right-radius: 24px;
             border-top: 1px solid rgba(255, 255, 255, 0.15);
-            padding: 18px 16px calc(20px + env(safe-area-inset-bottom));
+            padding: 16px 16px calc(18px + env(safe-area-inset-bottom));
             box-shadow: 0 -15px 40px rgba(0, 0, 0, 0.85);
             display: flex;
             flex-direction: column;
+            overflow: hidden;
         }
 
-        #inventory-panel.open { transform: translateY(0); }
+        #inventory-panel.open,
+        #upcoming-panel.open {
+            transform: translateY(0);
+        }
 
         .drawer-handle {
             width: 42px;
             height: 5px;
             background: rgba(255, 255, 255, 0.2);
             border-radius: 3px;
-            margin: 0 auto 12px;
+            margin: 0 auto 10px;
+            flex-shrink: 0;
         }
 
         .ledger-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 14px;
+            margin-bottom: 12px;
             padding-bottom: 10px;
             border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+            gap: 8px;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .tts-toggle-btn {
+            background: rgba(59, 130, 246, 0.15);
+            border: 1px solid var(--blue);
+            color: #93c5fd;
+            padding: 7px 11px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 800;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: 0.2s;
+        }
+        .tts-toggle-btn.muted {
+            background: rgba(239, 68, 68, 0.15);
+            border-color: var(--danger);
+            color: #fca5a5;
         }
 
         .ledger-columns {
             display: flex;
-            gap: 12px;
+            gap: 10px;
             flex: 1;
+            min-height: 0;
             overflow: hidden;
         }
 
@@ -779,9 +1046,10 @@
             background: rgba(9, 13, 22, 0.55);
             border: 1px solid var(--border);
             border-radius: 16px;
-            padding: 12px;
+            padding: 10px;
             display: flex;
             flex-direction: column;
+            min-height: 0;
             overflow: hidden;
         }
 
@@ -795,6 +1063,7 @@
             overflow: hidden;
             text-overflow: ellipsis;
             margin-bottom: 6px;
+            flex-shrink: 0;
         }
         .blue-col .ledger-player-title { color: #60a5fa; }
         .orange-col .ledger-player-title { color: #fb923c; }
@@ -808,6 +1077,7 @@
             border-radius: 10px;
             margin-bottom: 10px;
             font-size: 11px;
+            flex-shrink: 0;
         }
 
         .ledger-sum-item {
@@ -827,13 +1097,28 @@
             color: #fff;
         }
 
+        /* Guaranteed Touch-Scrollable List Containers */
         .inv-list {
             flex: 1;
+            min-height: 0;
             overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+            touch-action: pan-y;
             display: flex;
             flex-direction: column;
             gap: 6px;
-            padding-right: 2px;
+            padding-right: 4px;
+        }
+
+        .inv-list::-webkit-scrollbar,
+        .upcoming-list::-webkit-scrollbar {
+            width: 4px;
+        }
+        .inv-list::-webkit-scrollbar-thumb,
+        .upcoming-list::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
         }
 
         .inv-row {
@@ -844,6 +1129,7 @@
             display: flex;
             flex-direction: column;
             gap: 3px;
+            flex-shrink: 0;
         }
 
         .inv-row-top {
@@ -853,13 +1139,14 @@
             font-size: 12px;
             font-weight: 700;
             color: #fff;
+            gap: 6px;
         }
 
         .inv-item-title {
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            max-width: 90px;
+            flex: 1;
         }
 
         .inv-pts {
@@ -867,6 +1154,7 @@
             font-family: 'JetBrains Mono', monospace;
             font-size: 11px;
             font-weight: 800;
+            flex-shrink: 0;
         }
 
         .inv-row-sub {
@@ -877,7 +1165,107 @@
             justify-content: space-between;
         }
 
-        /* Confetti Canvas */
+        /* --- UPCOMING ITEMS LIST STYLES --- */
+        .upcoming-list {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+            touch-action: pan-y;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding-right: 4px;
+        }
+
+        .upcoming-item-row {
+            background: rgba(9, 13, 22, 0.7);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 11px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            flex-shrink: 0;
+            transition: 0.2s;
+        }
+
+        .upcoming-item-row.sailed {
+            opacity: 0.48;
+            background: rgba(9, 13, 22, 0.35);
+        }
+
+        .upcoming-item-row.sailed .up-name,
+        .upcoming-item-row.sailed .up-pts {
+            text-decoration: line-through;
+        }
+
+        .upcoming-item-row.live-now {
+            border-color: var(--blue);
+            background: rgba(59, 130, 246, 0.14);
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.25);
+        }
+
+        .up-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+            flex: 1;
+        }
+
+        .up-num {
+            width: 26px;
+            height: 26px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--muted);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .up-name {
+            font-size: 14px;
+            font-weight: 700;
+            color: #fff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .up-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .up-status-tag {
+            font-size: 9px;
+            font-weight: 800;
+            padding: 3px 7px;
+            border-radius: 6px;
+            text-transform: uppercase;
+        }
+        .up-status-tag.live { background: var(--danger); color: #fff; }
+        .up-status-tag.done { background: rgba(255, 255, 255, 0.1); color: var(--muted); }
+        .up-status-tag.next { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+
+        .up-pts {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            font-weight: 800;
+            color: var(--gold);
+        }
+
+        /* Confetti Canvas (Global End Game) */
         #confetti-canvas {
             position: fixed;
             inset: 0;
@@ -891,7 +1279,7 @@
 <!-- Toast Notification Container -->
 <div id="toast-container"></div>
 
-<!-- Confetti Canvas -->
+<!-- Confetti Canvas (End Game Victory) -->
 <canvas id="confetti-canvas" class="hidden"></canvas>
 
 <!-- Custom Back-Button Aware Modal -->
@@ -906,13 +1294,13 @@
     </div>
 </div>
 
-<!-- 1. Setup Screen -->
+<!-- 1. Setup Screen (No Prefilled Name) -->
 <div id="setup-screen" class="overlay">
     <div class="card">
         <div style="font-size:38px; margin-bottom:6px;">🔨</div>
         <h2>Enter Auction Clash</h2>
         <p style="font-size:12px; color:var(--muted); margin-bottom:18px;">Set your profile to enter the bidding arena</p>
-        <input type="text" id="player-name" placeholder="Your Name" value="சிவ மணிகண்டன்" maxlength="18">
+        <input type="text" id="player-name" placeholder="Enter Your Name" value="" maxlength="18" autocomplete="off">
         <select id="player-gender">
             <option value="M">Male Avatar</option>
             <option value="F">Female Avatar</option>
@@ -967,8 +1355,8 @@
         <div id="end-summary" style="background:#090d16; border:1px solid var(--border); border-radius:14px; padding:12px; margin-bottom:18px; text-align:left; font-size:12px;"></div>
 
         <div style="display:flex; gap:10px;">
-            <button class="btn" style="background:#334155; box-shadow:none;" onclick="openLedger()">View Ledger</button>
-            <button class="btn" onclick="endGameCleanup()">Finish & Exit</button>
+            <button class="btn" type="button" style="background:#334155; box-shadow:none;" onclick="openLedger()">📒 View Ledger</button>
+            <button class="btn" type="button" onclick="endGameCleanup()">Finish & Exit</button>
         </div>
     </div>
 </div>
@@ -991,7 +1379,7 @@
                 </div>
             </div>
             <div class="item-bid-box">
-                <div class="bid-label">Current Bid</div>
+                <div class="bid-label" id="current-bid-label">Current Bid</div>
                 <div id="current-bid-display">₹0</div>
             </div>
         </div>
@@ -1002,9 +1390,11 @@
     </div>
     
     <!-- Middle Bidding Arena -->
-    <div class="arena">
+    <div class="arena" id="arena-container">
         <!-- LEFT: ME (BLUE) -->
-        <div class="player-zone p-blue">
+        <div class="player-zone p-blue" id="zone-me">
+            <canvas class="avatar-confetti-canvas" id="confetti-me"></canvas>
+
             <div class="player-stats-card">
                 <div class="dash-name-row">
                     <span class="dash-name" id="name-me">Player 1</span>
@@ -1023,8 +1413,20 @@
                 <div class="thinking-badge" id="status-me">⚡ Your Turn to Act</div>
             </div>
 
-            <div class="avatar-stage">
-                <div class="avatar-figure" id="fig-me">
+            <div class="avatar-stage" id="stage-me">
+                <div class="emotion-banner" id="banner-me">🏆 WON BID!</div>
+                <div class="avatar-figure idle-physics" id="fig-me">
+                    <div class="anger-steam">💢</div>
+                    <!-- Articulated Physics Hands for Celebrating -->
+                    <svg class="chem-hand hand-left" viewBox="0 0 40 80">
+                        <rect x="14" y="24" width="12" height="48" rx="6" fill="#2563eb" stroke="#1d4ed8" stroke-width="2"/>
+                        <circle cx="20" cy="18" r="11" fill="#fde68a" stroke="#d97706" stroke-width="2"/>
+                    </svg>
+                    <svg class="chem-hand hand-right" viewBox="0 0 40 80">
+                        <rect x="14" y="24" width="12" height="48" rx="6" fill="#2563eb" stroke="#1d4ed8" stroke-width="2"/>
+                        <circle cx="20" cy="18" r="11" fill="#fde68a" stroke="#d97706" stroke-width="2"/>
+                    </svg>
+
                     <img id="img-me" class="dicebear-img" src="" alt="My Avatar">
                     <!-- Custom Animated SVG Bidding Paddle -->
                     <div class="paddle-rig" id="pad-me">
@@ -1045,7 +1447,9 @@
         </div>
         
         <!-- RIGHT: OPPONENT (ORANGE) -->
-        <div class="player-zone p-orange">
+        <div class="player-zone p-orange" id="zone-opp">
+            <canvas class="avatar-confetti-canvas" id="confetti-opp"></canvas>
+
             <div class="player-stats-card">
                 <div class="dash-name-row">
                     <span class="dash-name" id="name-opp">Opponent</span>
@@ -1064,8 +1468,20 @@
                 <div class="thinking-badge" id="status-opp">⏳ Deciding bid...</div>
             </div>
 
-            <div class="avatar-stage">
-                <div class="avatar-figure" id="fig-opp">
+            <div class="avatar-stage" id="stage-opp">
+                <div class="emotion-banner" id="banner-opp">🏆 WON BID!</div>
+                <div class="avatar-figure idle-physics" id="fig-opp">
+                    <div class="anger-steam">💢</div>
+                    <!-- Articulated Physics Hands for Celebrating -->
+                    <svg class="chem-hand hand-left" viewBox="0 0 40 80">
+                        <rect x="14" y="24" width="12" height="48" rx="6" fill="#ea580c" stroke="#c2410c" stroke-width="2"/>
+                        <circle cx="20" cy="18" r="11" fill="#fde68a" stroke="#d97706" stroke-width="2"/>
+                    </svg>
+                    <svg class="chem-hand hand-right" viewBox="0 0 40 80">
+                        <rect x="14" y="24" width="12" height="48" rx="6" fill="#ea580c" stroke="#c2410c" stroke-width="2"/>
+                        <circle cx="20" cy="18" r="11" fill="#fde68a" stroke="#d97706" stroke-width="2"/>
+                    </svg>
+
                     <img id="img-opp" class="dicebear-img" src="" alt="Opponent Avatar">
                     <!-- Custom Animated SVG Bidding Paddle -->
                     <div class="paddle-rig" id="pad-opp">
@@ -1094,64 +1510,94 @@
             <button class="btn btn-bid" id="btn-bid" onclick="placeBid()">BID</button>
             <button class="btn btn-leave" id="btn-leave" onclick="leaveBid()">LEAVE</button>
         </div>
-        <button class="ledger-btn" onclick="openLedger()">
-            <span>📒 View Ledger (Purchases, Funds & Points)</span>
-            <span>▲</span>
-        </button>
+        <!-- Split Side-by-Side Bottom Action Buttons -->
+        <div class="bottom-drawer-row">
+            <button class="ledger-btn" type="button" onclick="openUpcoming()">
+                <span>📅 View Upcoming</span>
+                <span>▲</span>
+            </button>
+            <button class="ledger-btn" type="button" onclick="openLedger()">
+                <span>📒 View Ledger</span>
+                <span>▲</span>
+            </button>
+        </div>
     </div>
-    
-    <!-- Backdrop & View Ledger Drawer -->
-    <div id="ledger-backdrop" onclick="closeLedger()"></div>
-    <div id="inventory-panel">
-        <div class="drawer-handle"></div>
-        <div class="ledger-header">
-            <div>
-                <h3 style="margin:0; font-size:17px; font-weight:800;">Auction Ledger</h3>
-                <span style="font-size:11px; color:var(--muted);">Real-time purchases, prices paid & remaining funds</span>
+</div>
+
+<!-- Shared Backdrop for Both Bottom Drawers (Placed outside #game-screen so it works on End Screen too) -->
+<div id="ledger-backdrop" onclick="closeAllDrawers()"></div>
+
+<!-- Left Button Drawer: Upcoming Celebrities List -->
+<div id="upcoming-panel">
+    <div class="drawer-handle"></div>
+    <div class="ledger-header">
+        <div>
+            <h3 style="margin:0; font-size:17px; font-weight:800;">Upcoming Auction List</h3>
+            <span style="font-size:11px; color:var(--muted);">All 10 drafted items, points & live status</span>
+        </div>
+        <div class="header-actions">
+            <button class="btn" type="button" style="width:auto; padding:8px 16px; font-size:12px; background:#334155; box-shadow:none;" onclick="closeUpcoming()">Close</button>
+        </div>
+    </div>
+    <div class="upcoming-list" id="upcoming-list-container"></div>
+</div>
+
+<!-- Right Button Drawer: View Ledger (With Speaker Voiceover Toggle Icon) -->
+<div id="inventory-panel">
+    <div class="drawer-handle"></div>
+    <div class="ledger-header">
+        <div>
+            <h3 style="margin:0; font-size:17px; font-weight:800;">Auction Ledger</h3>
+            <span style="font-size:11px; color:var(--muted);">Purchases, prices paid & remaining funds</span>
+        </div>
+        <div class="header-actions">
+            <button class="tts-toggle-btn" id="btn-tts-toggle" type="button" onclick="toggleVoiceover()" title="Toggle Voiceover Announcements">
+                <span id="tts-icon">🔊</span>
+                <span id="tts-label">Voice</span>
+            </button>
+            <button class="btn" type="button" style="width:auto; padding:8px 16px; font-size:12px; background:#334155; box-shadow:none;" onclick="closeLedger()">Close</button>
+        </div>
+    </div>
+
+    <div class="ledger-columns">
+        <!-- Blue Player Ledger -->
+        <div class="ledger-col blue-col">
+            <div class="ledger-player-title" id="ledger-name-me">Me</div>
+            <div class="ledger-summary-box">
+                <div class="ledger-sum-item">
+                    <span>Funds Left</span>
+                    <span id="ledger-funds-me" style="color:#34d399;">₹50</span>
+                </div>
+                <div class="ledger-sum-item">
+                    <span>Spent</span>
+                    <span id="ledger-spent-me" style="color:#f87171;">₹0</span>
+                </div>
+                <div class="ledger-sum-item" style="grid-column: span 2; border-top:1px solid rgba(255,255,255,0.06); padding-top:4px;">
+                    <span>Total Points</span>
+                    <span id="ledger-score-me" style="color:#fbbf24; font-size:15px;">0 pts</span>
+                </div>
             </div>
-            <button class="btn" style="width:auto; padding:8px 16px; font-size:12px; background:#334155; box-shadow:none;" onclick="closeLedger()">Close</button>
+            <div class="inv-list" id="inv-me"></div>
         </div>
 
-        <div class="ledger-columns">
-            <!-- Blue Player Ledger -->
-            <div class="ledger-col blue-col">
-                <div class="ledger-player-title" id="ledger-name-me">Me</div>
-                <div class="ledger-summary-box">
-                    <div class="ledger-sum-item">
-                        <span>Funds Left</span>
-                        <span id="ledger-funds-me" style="color:#34d399;">₹50</span>
-                    </div>
-                    <div class="ledger-sum-item">
-                        <span>Spent</span>
-                        <span id="ledger-spent-me" style="color:#f87171;">₹0</span>
-                    </div>
-                    <div class="ledger-sum-item" style="grid-column: span 2; border-top:1px solid rgba(255,255,255,0.06); padding-top:4px;">
-                        <span>Total Points</span>
-                        <span id="ledger-score-me" style="color:#fbbf24; font-size:15px;">0 pts</span>
-                    </div>
+        <!-- Orange Player Ledger -->
+        <div class="ledger-col orange-col">
+            <div class="ledger-player-title" id="ledger-name-opp">Opponent</div>
+            <div class="ledger-summary-box">
+                <div class="ledger-sum-item">
+                    <span>Funds Left</span>
+                    <span id="ledger-funds-opp" style="color:#34d399;">₹50</span>
                 </div>
-                <div class="inv-list" id="inv-me"></div>
-            </div>
-
-            <!-- Orange Player Ledger -->
-            <div class="ledger-col orange-col">
-                <div class="ledger-player-title" id="ledger-name-opp">Opponent</div>
-                <div class="ledger-summary-box">
-                    <div class="ledger-sum-item">
-                        <span>Funds Left</span>
-                        <span id="ledger-funds-opp" style="color:#34d399;">₹50</span>
-                    </div>
-                    <div class="ledger-sum-item">
-                        <span>Spent</span>
-                        <span id="ledger-spent-opp" style="color:#f87171;">₹0</span>
-                    </div>
-                    <div class="ledger-sum-item" style="grid-column: span 2; border-top:1px solid rgba(255,255,255,0.06); padding-top:4px;">
-                        <span>Total Points</span>
-                        <span id="ledger-score-opp" style="color:#fbbf24; font-size:15px;">0 pts</span>
-                    </div>
+                <div class="ledger-sum-item">
+                    <span>Spent</span>
+                    <span id="ledger-spent-opp" style="color:#f87171;">₹0</span>
                 </div>
-                <div class="inv-list" id="inv-opp"></div>
+                <div class="ledger-sum-item" style="grid-column: span 2; border-top:1px solid rgba(255,255,255,0.06); padding-top:4px;">
+                    <span>Total Points</span>
+                    <span id="ledger-score-opp" style="color:#fbbf24; font-size:15px;">0 pts</span>
+                </div>
             </div>
+            <div class="inv-list" id="inv-opp"></div>
         </div>
     </div>
 </div>
@@ -1162,6 +1608,71 @@ function vibrateDevice(pattern) {
     if ("vibrate" in navigator) {
         try { navigator.vibrate(pattern); } catch (e) {}
     }
+}
+
+/* --- GOOGLE TEXT-TO-SPEECH VOICEOVER ENGINE --- */
+let isVoiceEnabled = true;
+let selectedVoice = null;
+let speechTimeout = null;
+
+function initVoiceEngine() {
+    if (!('speechSynthesis' in window)) return;
+    const loadVoices = () => {
+        const voices = window.speechSynthesis.getVoices();
+        if (!voices || !voices.length) return;
+        selectedVoice =
+            voices.find(v => v.name.includes('Google US English')) ||
+            voices.find(v => v.name.includes('Google UK English Female')) ||
+            voices.find(v => v.name.includes('Google UK English Male')) ||
+            voices.find(v => v.name.includes('Google') && v.lang.startsWith('en')) ||
+            voices.find(v => v.lang === 'en-IN' || v.lang === 'en-US' || v.lang === 'en-GB') ||
+            voices.find(v => v.lang.startsWith('en')) ||
+            voices[0];
+    };
+    loadVoices();
+    window.speechSynthesis.onvoiceschanged = loadVoices;
+}
+initVoiceEngine();
+
+function speakAnnouncement(text, delayMs = 260) {
+    if (!isVoiceEnabled || !('speechSynthesis' in window)) return;
+    if (speechTimeout) clearTimeout(speechTimeout);
+
+    speechTimeout = setTimeout(() => {
+        if (!isVoiceEnabled) return;
+        try {
+            window.speechSynthesis.cancel();
+            const utter = new SpeechSynthesisUtterance(text);
+            if (!selectedVoice) initVoiceEngine();
+            if (selectedVoice) utter.voice = selectedVoice;
+            utter.rate = 1.04;
+            utter.pitch = 1.02;
+            utter.volume = 1.0;
+            window.speechSynthesis.speak(utter);
+        } catch (e) {}
+    }, delayMs);
+}
+
+function toggleVoiceover() {
+    isVoiceEnabled = !isVoiceEnabled;
+    const btn = document.getElementById('btn-tts-toggle');
+    const icon = document.getElementById('tts-icon');
+    const label = document.getElementById('tts-label');
+
+    if (isVoiceEnabled) {
+        btn.classList.remove('muted');
+        icon.innerText = '🔊';
+        label.innerText = 'Voice';
+        showToast("Voiceover announcements enabled!", "success");
+        speakAnnouncement("Voiceover enabled.", 50);
+    } else {
+        btn.classList.add('muted');
+        icon.innerText = '🔇';
+        label.innerText = 'Muted';
+        if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+        showToast("Voiceover announcements muted.", "info");
+    }
+    vibrateDevice(25);
 }
 
 /* --- MULTI-LAYERED SYNTHESIZER SOUND ENGINE --- */
@@ -1217,31 +1728,58 @@ function playSound(type) {
         });
 
     } else if (type === 'sold') {
-        // Double wooden gavel knock + bright cash chime
-        [0, 0.14].forEach(offset => {
+        // Double wooden gavel knock
+        [0, 0.12].forEach(offset => {
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.type = 'square';
-            osc.frequency.setValueAtTime(180, now + offset);
-            osc.frequency.exponentialRampToValueAtTime(45, now + offset + 0.09);
-            gain.gain.setValueAtTime(0.5, now + offset);
+            osc.frequency.setValueAtTime(190, now + offset);
+            osc.frequency.exponentialRampToValueAtTime(48, now + offset + 0.09);
+            gain.gain.setValueAtTime(0.45, now + offset);
             gain.gain.exponentialRampToValueAtTime(0.01, now + offset + 0.1);
             osc.connect(gain);
             gain.connect(audioCtx.destination);
             osc.start(now + offset);
             osc.stop(now + offset + 0.1);
         });
-        // Cash bell
-        const bell = audioCtx.createOscillator();
-        const bGain = audioCtx.createGain();
-        bell.type = 'sine';
-        bell.frequency.setValueAtTime(1318.5, now + 0.26);
-        bGain.gain.setValueAtTime(0.25, now + 0.26);
-        bGain.gain.exponentialRampToValueAtTime(0.001, now + 0.75);
-        bell.connect(bGain);
-        bGain.connect(audioCtx.destination);
-        bell.start(now + 0.26);
-        bell.stop(now + 0.75);
+
+    } else if (type === 'win_bid') {
+        // Enthusiastic Winner Fanfare (Bright Rising Arpeggio + Sparkle)
+        const notes = [523.25, 659.25, 783.99, 1046.5, 1318.5];
+        notes.forEach((freq, idx) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'triangle';
+            const start = now + 0.18 + idx * 0.065;
+            osc.frequency.setValueAtTime(freq, start);
+            gain.gain.setValueAtTime(0.28, start);
+            gain.gain.exponentialRampToValueAtTime(0.001, start + 0.45);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(start);
+            osc.stop(start + 0.45);
+        });
+
+    } else if (type === 'lose_bid') {
+        // Sad Defeated Trombone / Descending Womp-Womp for Loser
+        const sadNotes = [
+            { f1: 311.13, f2: 293.66, start: 0.18, dur: 0.22 },
+            { f1: 277.18, f2: 261.63, start: 0.42, dur: 0.22 },
+            { f1: 246.94, f2: 185.00, start: 0.66, dur: 0.50 }
+        ];
+        sadNotes.forEach(n => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(n.f1, now + n.start);
+            osc.frequency.linearRampToValueAtTime(n.f2, now + n.start + n.dur);
+            gain.gain.setValueAtTime(0.18, now + n.start);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + n.start + n.dur);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(now + n.start);
+            osc.stop(now + n.start + n.dur);
+        });
 
     } else if (type === 'leave') {
         const osc = audioCtx.createOscillator();
@@ -1286,7 +1824,7 @@ function playSound(type) {
     }
 }
 
-/* --- TOAST & BACK-BUTTON SUPPORTED MODAL SYSTEM --- */
+/* --- TOAST & BACK-BUTTON SUPPORTED MODAL / DRAWER SYSTEM --- */
 function showToast(message, type = 'info') {
     const container = document.getElementById('toast-container');
     const t = document.createElement('div');
@@ -1298,7 +1836,7 @@ function showToast(message, type = 'info') {
         t.style.transform = 'translateY(-10px)';
         t.style.transition = '0.25s';
         setTimeout(() => t.remove(), 250);
-    }, 2600);
+    }, 2700);
 }
 
 let activeOverlayState = null;
@@ -1340,6 +1878,9 @@ function closeCustomModal(fromPopState = false) {
 }
 
 function openLedger() {
+    const upcoming = document.getElementById('upcoming-panel');
+    if (upcoming.classList.contains('open')) upcoming.classList.remove('open');
+
     const panel = document.getElementById('inventory-panel');
     const backdrop = document.getElementById('ledger-backdrop');
     if (panel.classList.contains('open')) return;
@@ -1366,23 +1907,141 @@ function closeLedger(fromPopState = false) {
     }
 }
 
+function openUpcoming() {
+    const ledger = document.getElementById('inventory-panel');
+    if (ledger.classList.contains('open')) ledger.classList.remove('open');
+
+    const panel = document.getElementById('upcoming-panel');
+    const backdrop = document.getElementById('ledger-backdrop');
+    if (panel.classList.contains('open')) return;
+    panel.classList.add('open');
+    backdrop.classList.add('open');
+    vibrateDevice(25);
+    if (activeOverlayState !== 'upcoming') {
+        history.pushState({ uiOverlay: 'upcoming' }, '');
+        activeOverlayState = 'upcoming';
+    }
+}
+
+function closeUpcoming(fromPopState = false) {
+    const panel = document.getElementById('upcoming-panel');
+    const backdrop = document.getElementById('ledger-backdrop');
+    if (!panel.classList.contains('open')) return;
+    panel.classList.remove('open');
+    backdrop.classList.remove('open');
+    if (!fromPopState && activeOverlayState === 'upcoming') {
+        activeOverlayState = null;
+        history.back();
+    } else {
+        activeOverlayState = null;
+    }
+}
+
+function closeAllDrawers() {
+    if (document.getElementById('inventory-panel').classList.contains('open')) {
+        closeLedger();
+    } else if (document.getElementById('upcoming-panel').classList.contains('open')) {
+        closeUpcoming();
+    }
+}
+
 window.addEventListener('popstate', () => {
     if (activeOverlayState === 'ledger') {
         closeLedger(true);
+    } else if (activeOverlayState === 'upcoming') {
+        closeUpcoming(true);
     } else if (activeOverlayState === 'modal') {
         closeCustomModal(true);
     }
 });
 
-/* --- DICEBEAR PROFESSIONAL AVATAR GENERATOR (WITH INLINE FALLBACK) --- */
-function getAvatarUrl(gender, role) {
-    if (gender === 'F') {
-        const seed = role === 'p1' ? ' Sophia' : 'Valentina';
-        return `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(seed)}&top=longButNotTooLong,straight01,curvy&clothing=blazerAndSweater,collarAndSweater&clothingColor=2563eb,ea580c&mouth=smile,default&eyes=default,happy&eyebrows=defaultNatural`;
-    } else {
-        const seed = role === 'p1' ? 'Alexander' : 'Kingston';
-        return `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(seed)}&top=shortFlat,shortWaved,theCaesar&clothing=blazerAndShirt,blazerAndSweater&clothingColor=2563eb,ea580c&mouth=smile,default&eyes=default,happy&eyebrows=defaultNatural&facialHairProbability=20`;
+/* --- DICEBEAR PROFESSIONAL AVATAR GENERATOR WITH DYNAMIC MOOD EXPRESSIONS --- */
+function getAvatarUrl(gender, role, mood = 'neutral') {
+    const seed = gender === 'F'
+        ? (role === 'p1' ? 'Sophia' : 'Valentina')
+        : (role === 'p1' ? 'Alexander' : 'Kingston');
+
+    const topStyles = gender === 'F'
+        ? 'longButNotTooLong,straight01,curvy'
+        : 'shortFlat,shortWaved,theCaesar';
+
+    const clothes = gender === 'F'
+        ? 'blazerAndSweater,collarAndSweater'
+        : 'blazerAndShirt,blazerAndSweater';
+
+    const clothColor = role === 'p1' ? '2563eb' : 'ea580c';
+    const facialHair = gender === 'F' ? '' : '&facialHairProbability=20';
+
+    let mouth = 'smile,default';
+    let eyes = 'default,happy';
+    let eyebrows = 'defaultNatural';
+
+    if (mood === 'win') {
+        mouth = 'smile,twinkle';
+        eyes = 'happy,hearts';
+        eyebrows = 'raisedExcitedNatural,raisedExcited';
+    } else if (mood === 'lose') {
+        mouth = 'sad,grimace,serious';
+        eyes = 'squint,dizzy,cry';
+        eyebrows = 'angryNatural,angry,sadConcerned';
+    } else if (mood === 'bid') {
+        mouth = 'smile,twinkle';
+        eyes = 'wink,happy';
+        eyebrows = 'raisedExcitedNatural';
     }
+
+    return `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(seed)}&top=${topStyles}&clothing=${clothes}&clothingColor=${clothColor}&mouth=${mouth}&eyes=${eyes}&eyebrows=${eyebrows}${facialHair}`;
+}
+
+/* --- LOCALIZED AVATAR BOX CONFETTI ENGINE (SHOWS IN WINNER'S BOX ON BOTH SCREENS) --- */
+function fireAvatarBoxConfetti(canvasId) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    canvas.width = canvas.offsetWidth || 180;
+    canvas.height = canvas.offsetHeight || 280;
+
+    const colors = ['#10b981', '#fbbf24', '#3b82f6', '#f97316', '#ec4899', '#a855f7'];
+    const particles = Array.from({ length: 55 }).map(() => ({
+        x: canvas.width / 2 + (Math.random() - 0.5) * 30,
+        y: canvas.height * 0.55,
+        vx: (Math.random() - 0.5) * 7,
+        vy: -(Math.random() * 6 + 3.5),
+        gravity: 0.16,
+        w: Math.random() * 7 + 4,
+        h: Math.random() * 5 + 3,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        angle: Math.random() * 360,
+        spin: (Math.random() - 0.5) * 12,
+        alpha: 1
+    }));
+
+    let frame = 0;
+    function animateBoxConfetti() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        particles.forEach(p => {
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy += p.gravity;
+            p.angle += p.spin;
+            if (frame > 75) p.alpha = Math.max(0, p.alpha - 0.025);
+
+            ctx.save();
+            ctx.globalAlpha = p.alpha;
+            ctx.translate(p.x, p.y);
+            ctx.rotate((p.angle * Math.PI) / 180);
+            ctx.fillStyle = p.color;
+            ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+            ctx.restore();
+        });
+        frame++;
+        if (frame < 115) {
+            requestAnimationFrame(animateBoxConfetti);
+        } else {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+    }
+    animateBoxConfetti();
 }
 
 /* --- FIREBASE CONFIGURATION --- */
@@ -1406,9 +2065,13 @@ let localState = {};
 let previousBidCount = 0;
 let previousItemIndex = -1;
 let previousTurn = null;
+let previousPassCount = 0;
+let lastProcessedEventId = 0;
+let endScreenHandled = false;
 let avatarsLoaded = false;
 let paddleTimeoutMe = null;
 let paddleTimeoutOpp = null;
+let reactionTimeout = null;
 
 /* Urgency Timer (15 seconds per turn) */
 const TURN_SECONDS = 15;
@@ -1421,6 +2084,7 @@ function qs(sel) { return document.querySelector(sel); }
 
 function initPlayer() {
     initAudio();
+    initVoiceEngine();
     const nameInput = qs('#player-name').value.trim();
     if (!nameInput) {
         playSound('error');
@@ -1461,7 +2125,7 @@ function initPlayer() {
         roomRef.set({
             phase: 'waiting',
             players: { p1: { name: nameInput, gender, funds: 50, score: 0, spent: 0 } },
-            auction: { index: 0, currentBid: 0, highestBidder: null, turn: 'p1', bidCount: 0 }
+            auction: { index: 0, currentBid: 0, highestBidder: null, turn: 'p1', bidCount: 0, passCount: 0 }
         });
 
         qs('#invite-link').innerText = window.location.origin + window.location.pathname + "?m=" + roomId;
@@ -1530,7 +2194,10 @@ function submitDraft() {
     const inputs = document.querySelectorAll('.draft-in');
     const items = Array.from(inputs).map(i => ({
         name: i.value.trim(),
-        points: Math.floor(Math.random() * 401) + 100
+        points: Math.floor(Math.random() * 401) + 100,
+        status: 'upcoming',
+        winnerName: null,
+        soldPrice: 0
     }));
 
     roomRef.child('drafts/' + myRole).set({ ready: true, items: items });
@@ -1558,6 +2225,7 @@ function listenToRoom() {
                 phase: 'bidding',
                 items: allItems,
                 'auction/turn': firstTurn,
+                'auction/passCount': 0,
                 drafts: null
             });
         }
@@ -1598,6 +2266,192 @@ function resetTurnTimer(isMyTurn, isGameEnded) {
     }, 250);
 }
 
+/* --- TRIGGER CROSS-SCREEN WINNER / LOSER PHYSICS, CONFETTI, SOUND & VOICEOVER --- */
+function handleBroadcastEvent(state) {
+    const ev = state.lastEvent;
+    if (!ev || !ev.id || ev.id === lastProcessedEventId) return;
+    lastProcessedEventId = ev.id;
+
+    const me = state.players[myRole];
+    const opp = state.players[oppRole];
+
+    if (ev.type === 'bid') {
+        const bidderName = state.players[ev.bidder] ? state.players[ev.bidder].name : 'Player';
+        speakAnnouncement(`${bidderName} bid ${ev.amount} rupees.`, 180);
+
+    } else if (ev.type === 'least_bid') {
+        playSound('leave');
+        vibrateDevice([50, 40, 50]);
+        const passerName = state.players[ev.passer]?.name || 'Player';
+        const nextName = state.players[ev.nextPlayer]?.name || 'Next player';
+
+        // Pendulum drop animation on the player who left
+        const passerSide = ev.passer === myRole ? 'me' : 'opp';
+        const padEl = qs(`#pad-${passerSide}`);
+        if (padEl) {
+            padEl.classList.remove('raised');
+            padEl.classList.add('pendulum-drop');
+            setTimeout(() => padEl.classList.remove('pendulum-drop'), 950);
+        }
+
+        showToast(`${passerName} left at ₹0! Least Bid (₹1) for ${nextName}!`, "gold");
+        speakAnnouncement(`${passerName} passed. Least bid for ${nextName} at 1 rupee.`, 220);
+
+    } else if (ev.type === 'sold') {
+        const isMeWinner = ev.winner === myRole;
+        const winnerName = state.players[ev.winner]?.name || 'Winner';
+
+        // 1. Gavel Sound + Split Winner/Loser Audio
+        playSound('sold');
+        if (isMeWinner) {
+            playSound('win_bid');
+            vibrateDevice([80, 40, 140, 40, 180]);
+        } else {
+            playSound('lose_bid');
+            vibrateDevice([180, 60, 180]);
+        }
+
+        // 2. Impact Screen Shake on Arena
+        const arena = qs('#arena-container');
+        arena.classList.remove('arena-shake');
+        void arena.offsetWidth;
+        arena.classList.add('arena-shake');
+
+        // 3. Localized Confetti inside Winner's Avatar Box (Visible to BOTH Winner & Loser!)
+        const winnerCanvasId = isMeWinner ? 'confetti-me' : 'confetti-opp';
+        fireAvatarBoxConfetti(winnerCanvasId);
+
+        // 4. Avatar Facial Expressions + Physics (Squash-and-Stretch Jump vs Angry Tantrum Slouch)
+        const figMe = qs('#fig-me');
+        const figOpp = qs('#fig-opp');
+        const zoneMe = qs('#zone-me');
+        const zoneOpp = qs('#zone-opp');
+        const bannerMe = qs('#banner-me');
+        const bannerOpp = qs('#banner-opp');
+        const padLoser = qs(isMeWinner ? '#pad-opp' : '#pad-me');
+
+        if (padLoser) {
+            padLoser.classList.remove('raised');
+            padLoser.classList.add('pendulum-drop');
+        }
+
+        figMe.classList.remove('winner-celebrate', 'loser-tantrum');
+        figOpp.classList.remove('winner-celebrate', 'loser-tantrum');
+        zoneMe.classList.remove('zone-win-glow', 'zone-lose-dim');
+        zoneOpp.classList.remove('zone-win-glow', 'zone-lose-dim');
+        bannerMe.className = 'emotion-banner';
+        bannerOpp.className = 'emotion-banner';
+
+        if (isMeWinner) {
+            qs('#img-me').src = getAvatarUrl(me.gender, myRole, 'win');
+            qs('#img-opp').src = getAvatarUrl(opp.gender, oppRole, 'lose');
+            figMe.classList.add('winner-celebrate');
+            figOpp.classList.add('loser-tantrum');
+            zoneMe.classList.add('zone-win-glow');
+            zoneOpp.classList.add('zone-lose-dim');
+            bannerMe.innerText = `🏆 WON! +${ev.points} PTS`;
+            bannerMe.classList.add('show-win');
+            bannerOpp.innerText = `😤 LOST BID`;
+            bannerOpp.classList.add('show-lose');
+        } else {
+            qs('#img-me').src = getAvatarUrl(me.gender, myRole, 'lose');
+            qs('#img-opp').src = getAvatarUrl(opp.gender, oppRole, 'win');
+            figMe.classList.add('loser-tantrum');
+            figOpp.classList.add('winner-celebrate');
+            zoneMe.classList.add('zone-lose-dim');
+            zoneOpp.classList.add('zone-win-glow');
+            bannerMe.innerText = `😤 LOST BID`;
+            bannerMe.classList.add('show-lose');
+            bannerOpp.innerText = `🏆 WON! +${ev.points} PTS`;
+            bannerOpp.classList.add('show-win');
+        }
+
+        if (reactionTimeout) clearTimeout(reactionTimeout);
+        reactionTimeout = setTimeout(() => {
+            figMe.classList.remove('winner-celebrate', 'loser-tantrum');
+            figOpp.classList.remove('winner-celebrate', 'loser-tantrum');
+            zoneMe.classList.remove('zone-win-glow', 'zone-lose-dim');
+            zoneOpp.classList.remove('zone-win-glow', 'zone-lose-dim');
+            bannerMe.className = 'emotion-banner';
+            bannerOpp.className = 'emotion-banner';
+            if (padLoser) padLoser.classList.remove('pendulum-drop');
+            qs('#img-me').src = getAvatarUrl(me.gender, myRole, 'neutral');
+            qs('#img-opp').src = getAvatarUrl(opp.gender, oppRole, 'neutral');
+        }, 2600);
+
+        showToast(`🔨 Sold ${ev.itemName} to ${winnerName} for ₹${ev.cost}!`, "success");
+
+        // Sequence Voiceover announcement
+        if (state.phase !== 'end') {
+            const nextItem = state.items && state.items[state.auction.index];
+            const nextStarter = state.players[state.auction.turn]?.name || '';
+            if (nextItem) {
+                speakAnnouncement(
+                    `${winnerName} won ${ev.itemName} for ${ev.cost} rupees! Next up, ${nextItem.name}, for ${nextItem.points} points. Bidding starts with ${nextStarter}.`,
+                    350
+                );
+            } else {
+                speakAnnouncement(`${winnerName} won ${ev.itemName} for ${ev.cost} rupees!`, 350);
+            }
+        }
+
+    } else if (ev.type === 'skipped') {
+        playSound('leave');
+        vibrateDevice(60);
+        showToast(`No bids placed for ${ev.itemName}. Item skipped!`, "info");
+
+        if (state.phase !== 'end') {
+            const nextItem = state.items && state.items[state.auction.index];
+            const nextStarter = state.players[state.auction.turn]?.name || '';
+            if (nextItem) {
+                speakAnnouncement(
+                    `Item skipped. Next up, ${nextItem.name}, for ${nextItem.points} points. Bidding starts with ${nextStarter}.`,
+                    260
+                );
+            }
+        }
+    }
+}
+
+/* --- RENDER UPCOMING ITEMS DRAWER LIST --- */
+function renderUpcomingList(state) {
+    const container = qs('#upcoming-list-container');
+    if (!container || !state.items) return;
+
+    const currentIndex = state.phase === 'end' ? 10 : state.auction.index;
+    container.innerHTML = '';
+
+    state.items.forEach((item, idx) => {
+        const isPast = idx < currentIndex;
+        const isCurrent = idx === currentIndex && state.phase === 'bidding';
+        const rowClass = isPast ? 'upcoming-item-row sailed' : (isCurrent ? 'upcoming-item-row live-now' : 'upcoming-item-row');
+
+        let badgeHtml = `<span class="up-status-tag next">UPCOMING</span>`;
+        if (isCurrent) {
+            badgeHtml = `<span class="up-status-tag live">🔴 LIVE NOW</span>`;
+        } else if (isPast) {
+            if (item.winnerName) {
+                badgeHtml = `<span class="up-status-tag done">SOLD ₹${item.soldPrice} (${item.winnerName})</span>`;
+            } else {
+                badgeHtml = `<span class="up-status-tag done">SKIPPED</span>`;
+            }
+        }
+
+        container.innerHTML += `
+            <div class="${rowClass}">
+                <div class="up-left">
+                    <div class="up-num">${idx + 1}</div>
+                    <div class="up-name">${ITEM_ICONS[idx % ITEM_ICONS.length]} ${item.name}</div>
+                </div>
+                <div class="up-right">
+                    ${badgeHtml}
+                    <span class="up-pts">+${item.points} pts</span>
+                </div>
+            </div>
+        `;
+    });
+}
+
 /* --- MAIN GAME RENDERER --- */
 function renderGame(state) {
     if (!state.players || !state.players[myRole] || !state.players[oppRole]) return;
@@ -1629,12 +2483,12 @@ function renderGame(state) {
 
     // 2. Load Imported DiceBear Avatars Once
     if (!avatarsLoaded) {
-        qs('#img-me').src = getAvatarUrl(me.gender, myRole);
-        qs('#img-opp').src = getAvatarUrl(opp.gender, oppRole);
+        qs('#img-me').src = getAvatarUrl(me.gender, myRole, 'neutral');
+        qs('#img-opp').src = getAvatarUrl(opp.gender, oppRole, 'neutral');
         avatarsLoaded = true;
     }
 
-    // 3. Populate Detailed Ledger Lists (Name, Points, Paid Price)
+    // 3. Populate Detailed Scrollable Ledger Lists (Name, Points, Paid Price)
     const renderInv = (player, listId) => {
         const list = qs(listId);
         list.innerHTML = '';
@@ -1660,33 +2514,46 @@ function renderGame(state) {
     renderInv(me, '#inv-me');
     renderInv(opp, '#inv-opp');
 
+    // Render Upcoming List
+    renderUpcomingList(state);
+
+    // Handle Cross-Screen Broadcast Events (Sold, Bid, Least Bid, Skipped)
+    handleBroadcastEvent(state);
+
     // 4. Check Game Over State
     if (state.phase === 'end') {
         resetTurnTimer(false, true);
         qs('#end-screen').classList.remove('hidden');
-        const winTitle = qs('#win-title');
-        const winDesc = qs('#win-desc');
-        const winEmoji = qs('#win-emoji');
 
-        playSound('win');
-        vibrateDevice([100, 50, 100, 50, 220]);
-        startConfetti();
+        if (!endScreenHandled) {
+            endScreenHandled = true;
+            const winTitle = qs('#win-title');
+            const winDesc = qs('#win-desc');
+            const winEmoji = qs('#win-emoji');
 
-        if (me.score > opp.score) {
-            winEmoji.innerText = '🏆';
-            winTitle.innerText = 'VICTORY!';
-            winTitle.style.color = '#10b981';
-            winDesc.innerText = `You defeated ${opp.name} with ${me.score} points!`;
-        } else if (me.score < opp.score) {
-            winEmoji.innerText = '⚔️';
-            winTitle.innerText = 'DEFEAT';
-            winTitle.style.color = '#ef4444';
-            winDesc.innerText = `${opp.name} won the auction with ${opp.score} points.`;
-        } else {
-            winEmoji.innerText = '🤝';
-            winTitle.innerText = 'DRAW GAME';
-            winTitle.style.color = '#f59e0b';
-            winDesc.innerText = `Both players tied at ${me.score} points!`;
+            playSound('win');
+            vibrateDevice([100, 50, 100, 50, 220]);
+            startConfetti();
+
+            if (me.score > opp.score) {
+                winEmoji.innerText = '🏆';
+                winTitle.innerText = 'VICTORY!';
+                winTitle.style.color = '#10b981';
+                winDesc.innerText = `You defeated ${opp.name} with ${me.score} points!`;
+                speakAnnouncement(`Auction complete! Victory! You defeated ${opp.name} with ${me.score} points!`, 400);
+            } else if (me.score < opp.score) {
+                winEmoji.innerText = '⚔️';
+                winTitle.innerText = 'DEFEAT';
+                winTitle.style.color = '#ef4444';
+                winDesc.innerText = `${opp.name} won the auction with ${opp.score} points.`;
+                speakAnnouncement(`Auction complete! ${opp.name} won the auction with ${opp.score} points.`, 400);
+            } else {
+                winEmoji.innerText = '🤝';
+                winTitle.innerText = 'DRAW GAME';
+                winTitle.style.color = '#f59e0b';
+                winDesc.innerText = `Both players tied at ${me.score} points!`;
+                speakAnnouncement(`Auction complete! Both players tied at ${me.score} points!`, 400);
+            }
         }
 
         qs('#end-summary').innerHTML = `
@@ -1705,21 +2572,27 @@ function renderGame(state) {
     // 5. Stage Item & Shift + Shimmer Reveal Animation on New Item
     const currentIndex = state.auction.index;
     const item = state.items[currentIndex];
+    if (!item) return;
+
     const cardEl = qs('#auction-card');
+    const passCount = state.auction.passCount || 0;
+    const isLeastBidState = state.auction.currentBid === 0 && !state.auction.highestBidder && passCount === 1;
 
     qs('#item-counter').innerText = `ITEM ${currentIndex + 1} OF 10`;
     qs('#item-icon').innerText = ITEM_ICONS[currentIndex % ITEM_ICONS.length];
     qs('#item-name').innerText = item.name;
     qs('#item-score').innerText = `Points: ${item.points}`;
-    qs('#current-bid-display').innerText = `₹${state.auction.currentBid}`;
+    qs('#current-bid-label').innerText = isLeastBidState ? 'Least Bid' : 'Current Bid';
+    qs('#current-bid-display').innerText = isLeastBidState ? `₹1` : `₹${state.auction.currentBid}`;
 
     if (currentIndex !== previousItemIndex) {
-        // New item arrived -> Shift + Shimmer + Haptic Pulse
+        const isFirstItem = previousItemIndex === -1;
         previousItemIndex = currentIndex;
         previousBidCount = 0;
+        previousPassCount = 0;
 
-        qs('#pad-me').classList.remove('raised');
-        qs('#pad-opp').classList.remove('raised');
+        qs('#pad-me').classList.remove('raised', 'pendulum-drop');
+        qs('#pad-opp').classList.remove('raised', 'pendulum-drop');
 
         cardEl.classList.remove('shift-in', 'shimmer-active');
         void cardEl.offsetWidth; // Reflow
@@ -1727,12 +2600,18 @@ function renderGame(state) {
 
         playSound('shimmer');
         vibrateDevice([50, 90, 50]);
+
+        // Voiceover for the very first item when the game begins
+        if (isFirstItem) {
+            const starterName = state.players[state.auction.turn]?.name || 'Player';
+            speakAnnouncement(`Welcome to Auction Clash! First up, ${item.name}, for ${item.points} points. Bidding starts with ${starterName}.`, 350);
+        }
     }
 
-    // Highlight Highest Bidder Glow on Top Card
+    // Highlight Highest Bidder or Least Bid Glow on Top Card
     const leaderPill = qs('#highest-bidder-pill');
-    cardEl.classList.remove('lead-me', 'lead-opp');
-    leaderPill.classList.remove('me', 'opp');
+    cardEl.classList.remove('lead-me', 'lead-opp', 'least-bid-glow');
+    leaderPill.classList.remove('me', 'opp', 'least');
 
     if (state.auction.highestBidder === myRole) {
         cardEl.classList.add('lead-me');
@@ -1742,13 +2621,19 @@ function renderGame(state) {
         cardEl.classList.add('lead-opp');
         leaderPill.classList.add('opp');
         leaderPill.innerText = `HIGHEST: ${opp.name.toUpperCase()}`;
+    } else if (isLeastBidState) {
+        cardEl.classList.add('least-bid-glow');
+        leaderPill.classList.add('least');
+        const targetPlayer = state.players[state.auction.turn]?.name || '';
+        leaderPill.innerText = `LEAST BID: ₹1 (${targetPlayer.toUpperCase()})`;
     } else {
         leaderPill.innerText = `OPENING BID: ₹1+`;
     }
 
-    // 6. Turn Controls & Insufficient Funds Check
+    // 6. Turn Controls, Least-Bid Auto-Fill & Insufficient Funds Check
     const isMyTurn = state.auction.turn === myRole;
-    const canAfford = me.funds > state.auction.currentBid;
+    const minRequiredBid = isLeastBidState ? 1 : state.auction.currentBid + 1;
+    const canAfford = me.funds >= minRequiredBid;
 
     const input = qs('#bid-input');
     const btnBid = qs('#btn-bid');
@@ -1758,28 +2643,44 @@ function renderGame(state) {
     qs('#status-me').classList.toggle('active', isMyTurn);
     qs('#status-opp').classList.toggle('active', !isMyTurn);
 
-    if (previousTurn !== state.auction.turn || state.auction.bidCount !== previousBidCount) {
+    if (previousTurn !== state.auction.turn || state.auction.bidCount !== previousBidCount || passCount !== previousPassCount) {
         resetTurnTimer(isMyTurn, false);
         if (isMyTurn && previousTurn !== null) {
             vibrateDevice(45);
         }
         previousTurn = state.auction.turn;
+        previousPassCount = passCount;
     }
 
     if (isMyTurn) {
         btnLeave.disabled = false;
         if (canAfford) {
-            indicator.innerText = `YOUR TURN • MIN BID ₹${state.auction.currentBid + 1}`;
-            indicator.style.background = "#10b981";
-            indicator.style.color = "#052e16";
             btnBid.disabled = false;
             input.disabled = false;
-            input.placeholder = `Min ₹${state.auction.currentBid + 1}`;
+
+            if (isLeastBidState) {
+                indicator.innerText = `🔥 LEAST BID CHANCE • BUY FOR ₹1!`;
+                indicator.style.background = "#f59e0b";
+                indicator.style.color = "#090d16";
+                input.value = '1';
+                input.placeholder = "₹1";
+                btnBid.innerText = "PURCHASE";
+                btnBid.classList.add('purchase-mode');
+            } else {
+                indicator.innerText = `YOUR TURN • MIN BID ₹${state.auction.currentBid + 1}`;
+                indicator.style.background = "#10b981";
+                indicator.style.color = "#052e16";
+                input.placeholder = `Min ₹${state.auction.currentBid + 1}`;
+                btnBid.innerText = "BID";
+                btnBid.classList.remove('purchase-mode');
+            }
         } else {
             indicator.innerText = `INSUFFICIENT FUNDS (₹${me.funds} LEFT) — CLICK LEAVE`;
             indicator.style.background = "#ef4444";
             indicator.style.color = "#fff";
             btnBid.disabled = true;
+            btnBid.innerText = "BID";
+            btnBid.classList.remove('purchase-mode');
             input.disabled = true;
             input.value = '';
             input.placeholder = "No Funds Left";
@@ -1787,16 +2688,23 @@ function renderGame(state) {
             vibrateDevice([120, 50, 120]);
         }
     } else {
-        indicator.innerText = `WAITING FOR ${opp.name.toUpperCase()}...`;
+        if (isLeastBidState) {
+            indicator.innerText = `${opp.name.toUpperCase()} HAS LEAST BID (₹1) OPTION...`;
+        } else {
+            indicator.innerText = `WAITING FOR ${opp.name.toUpperCase()}...`;
+        }
         indicator.style.background = "#090d16";
         indicator.style.color = "#94a3b8";
         btnBid.disabled = true;
+        btnBid.innerText = "BID";
+        btnBid.classList.remove('purchase-mode');
         btnLeave.disabled = true;
         input.disabled = true;
+        input.value = '';
         input.placeholder = "Opponent's Turn";
     }
 
-    // 7. Trigger Animated SVG Bidding Paddle on New Bid
+    // 7. Trigger Animated SVG Bidding Paddle with Spring Recoil on New Bid
     if (state.auction.bidCount > previousBidCount && state.auction.highestBidder) {
         playSound('bid');
         vibrateDevice(40);
@@ -1809,11 +2717,20 @@ function renderGame(state) {
         const otherPaddleRig = qs(`#pad-${otherRoleId}`);
         const paddleText = qs(`#padval-${targetRoleId}`);
         const avatarFig = qs(`#fig-${targetRoleId}`);
+        const avatarImg = qs(`#img-${targetRoleId}`);
 
         if (paddleText && paddleRig) {
             paddleText.textContent = `₹${state.auction.currentBid}`;
             otherPaddleRig.classList.remove('raised');
+            paddleRig.classList.remove('pendulum-drop');
+            paddleRig.classList.remove('raised');
+            void paddleRig.offsetWidth;
             paddleRig.classList.add('raised');
+
+            // Temporary excited bidding expression
+            const bidderPlayer = isMeBidder ? me : opp;
+            const bidderRole = isMeBidder ? myRole : oppRole;
+            if (avatarImg) avatarImg.src = getAvatarUrl(bidderPlayer.gender, bidderRole, 'bid');
 
             avatarFig.classList.remove('bidding-bounce');
             void avatarFig.offsetWidth;
@@ -1821,23 +2738,33 @@ function renderGame(state) {
 
             if (isMeBidder) {
                 if (paddleTimeoutMe) clearTimeout(paddleTimeoutMe);
-                paddleTimeoutMe = setTimeout(() => paddleRig.classList.remove('raised'), 2200);
+                paddleTimeoutMe = setTimeout(() => {
+                    paddleRig.classList.remove('raised');
+                    if (avatarImg) avatarImg.src = getAvatarUrl(me.gender, myRole, 'neutral');
+                }, 2200);
             } else {
                 if (paddleTimeoutOpp) clearTimeout(paddleTimeoutOpp);
-                paddleTimeoutOpp = setTimeout(() => paddleRig.classList.remove('raised'), 2200);
+                paddleTimeoutOpp = setTimeout(() => {
+                    paddleRig.classList.remove('raised');
+                    if (avatarImg) avatarImg.src = getAvatarUrl(opp.gender, oppRole, 'neutral');
+                }, 2200);
             }
         }
         previousBidCount = state.auction.bidCount;
     }
 }
 
-/* --- PLAYER ACTIONS: BID & LEAVE --- */
+/* --- PLAYER ACTIONS: BID / PURCHASE & LEAVE --- */
 function placeBid() {
+    const state = localState;
+    if (!state || state.phase !== 'bidding') return;
+
     const rawVal = qs('#bid-input').value.trim();
     const amount = parseInt(rawVal, 10);
-    const state = localState;
     const myFunds = state.players[myRole].funds;
-    const minBid = state.auction.currentBid + 1;
+    const passCount = state.auction.passCount || 0;
+    const isLeastBidPurchase = state.auction.currentBid === 0 && !state.auction.highestBidder && passCount === 1;
+    const minBid = isLeastBidPurchase ? 1 : state.auction.currentBid + 1;
 
     if (isNaN(amount) || amount < minBid) {
         playSound('error');
@@ -1854,11 +2781,68 @@ function placeBid() {
     }
 
     qs('#bid-input').value = '';
-    roomRef.child('auction').update({
-        currentBid: amount,
-        highestBidder: myRole,
-        turn: oppRole,
-        bidCount: firebase.database.ServerValue.increment(1)
+
+    // If opponent already clicked Leave at ₹0 (Least Bid state), clicking Purchase buys it immediately!
+    if (isLeastBidPurchase) {
+        const auction = state.auction;
+        const nextIndex = auction.index + 1;
+        const item = state.items[auction.index];
+        const winner = myRole;
+        const winnerName = state.players[winner].name;
+        const cost = amount;
+
+        let updates = {};
+        updates['auction/index'] = nextIndex;
+        updates['auction/currentBid'] = 0;
+        updates['auction/highestBidder'] = null;
+        updates['auction/bidCount'] = 0;
+        updates['auction/passCount'] = 0;
+
+        updates[`players/${winner}/funds`] = state.players[winner].funds - cost;
+        updates[`players/${winner}/score`] = state.players[winner].score + item.points;
+        updates[`items/${auction.index}/status`] = 'sold';
+        updates[`items/${auction.index}/winnerName`] = winnerName;
+        updates[`items/${auction.index}/soldPrice`] = cost;
+
+        roomRef.child(`players/${winner}/items`).push({
+            name: item.name,
+            points: item.points,
+            cost: cost
+        });
+
+        updates['lastEvent'] = {
+            type: 'sold',
+            winner: winner,
+            loser: oppRole,
+            itemName: item.name,
+            points: item.points,
+            cost: cost,
+            id: Date.now()
+        };
+
+        if (nextIndex >= 10) {
+            updates['phase'] = 'end';
+        } else {
+            updates['auction/turn'] = winner;
+        }
+
+        roomRef.update(updates);
+        return;
+    }
+
+    // Standard Bid
+    roomRef.update({
+        'auction/currentBid': amount,
+        'auction/highestBidder': myRole,
+        'auction/turn': oppRole,
+        'auction/passCount': 0,
+        'auction/bidCount': firebase.database.ServerValue.increment(1),
+        'lastEvent': {
+            type: 'bid',
+            bidder: myRole,
+            amount: amount,
+            id: Date.now()
+        }
     });
 }
 
@@ -1867,6 +2851,27 @@ function leaveBid() {
     if (!state || state.phase !== 'bidding') return;
 
     const auction = state.auction;
+    const passCount = auction.passCount || 0;
+    const item = state.items[auction.index];
+
+    // CASE 1: First player clicks Leave (or times out) when Current Bid is ₹0 -> DO NOT SKIP!
+    // Pass to the 2nd player as a Least Bid (₹1) opportunity!
+    if (!auction.highestBidder && auction.currentBid === 0 && passCount === 0) {
+        roomRef.update({
+            'auction/turn': oppRole,
+            'auction/passCount': 1,
+            'lastEvent': {
+                type: 'least_bid',
+                passer: myRole,
+                nextPlayer: oppRole,
+                itemName: item.name,
+                id: Date.now()
+            }
+        });
+        return;
+    }
+
+    // CASE 2: Either someone has placed a bid (Sold!) OR both players passed at ₹0 (Skipped!)
     let updates = {};
     const nextIndex = auction.index + 1;
 
@@ -1874,18 +2879,19 @@ function leaveBid() {
     updates['auction/currentBid'] = 0;
     updates['auction/highestBidder'] = null;
     updates['auction/bidCount'] = 0;
+    updates['auction/passCount'] = 0;
 
     if (auction.highestBidder) {
-        playSound('sold');
-        vibrateDevice([80, 40, 120]);
-
         const winner = auction.highestBidder;
+        const loser = winner === 'p1' ? 'p2' : 'p1';
         const winnerName = state.players[winner].name;
-        const item = state.items[auction.index];
         const cost = auction.currentBid;
 
         updates[`players/${winner}/funds`] = state.players[winner].funds - cost;
         updates[`players/${winner}/score`] = state.players[winner].score + item.points;
+        updates[`items/${auction.index}/status`] = 'sold';
+        updates[`items/${auction.index}/winnerName`] = winnerName;
+        updates[`items/${auction.index}/soldPrice`] = cost;
 
         roomRef.child(`players/${winner}/items`).push({
             name: item.name,
@@ -1893,11 +2899,22 @@ function leaveBid() {
             cost: cost
         });
 
-        showToast(`Sold ${item.name} to ${winnerName} for ₹${cost}!`, "success");
+        updates['lastEvent'] = {
+            type: 'sold',
+            winner: winner,
+            loser: loser,
+            itemName: item.name,
+            points: item.points,
+            cost: cost,
+            id: Date.now()
+        };
     } else {
-        playSound('leave');
-        vibrateDevice(50);
-        showToast("No bids placed. Item skipped!", "info");
+        updates[`items/${auction.index}/status`] = 'skipped';
+        updates['lastEvent'] = {
+            type: 'skipped',
+            itemName: item.name,
+            id: Date.now()
+        };
     }
 
     if (nextIndex >= 10) {
@@ -1909,7 +2926,7 @@ function leaveBid() {
     roomRef.update(updates);
 }
 
-/* --- CONFETTI VICTORY ENGINE --- */
+/* --- CONFETTI VICTORY ENGINE (END SCREEN) --- */
 function startConfetti() {
     const canvas = qs('#confetti-canvas');
     canvas.classList.remove('hidden');
@@ -1917,7 +2934,7 @@ function startConfetti() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
-    const pieces = Array.from({ length: 75 }).map(() => ({
+    const pieces = Array.from({ length: 85 }).map(() => ({
         x: Math.random() * canvas.width,
         y: Math.random() * canvas.height - canvas.height,
         w: Math.random() * 9 + 5,
@@ -1952,12 +2969,16 @@ function startConfetti() {
 /* --- CLEANUP ROOM ON EXIT --- */
 function endGameCleanup() {
     if (timerInterval) clearInterval(timerInterval);
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    vibrateDevice(35);
+    const goHome = () => {
+        window.location.href = window.location.pathname;
+    };
     if (roomRef) {
-        roomRef.remove().finally(() => {
-            location.href = location.pathname;
-        });
+        roomRef.off();
+        roomRef.remove().then(goHome).catch(goHome);
     } else {
-        location.href = location.pathname;
+        goHome();
     }
 }
 </script>
